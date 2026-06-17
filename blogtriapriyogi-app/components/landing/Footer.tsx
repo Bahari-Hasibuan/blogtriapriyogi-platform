@@ -3,31 +3,34 @@ export default function Footer() {
     <footer className="footer">
       <div>
         <h3>TriApriyogi Studio</h3>
-        <p>Platform blog modern dengan dashboard, AI, dan domain kustom.</p>
+        <p>
+          Platform blog modern dengan dashboard, AI Assistant, analytics,
+          custom domain, dan tools publikasi profesional.
+        </p>
       </div>
 
       <div>
         <b>Produk</b>
-        <a>Dashboard</a>
-        <a>Blog</a>
-        <a>AI Assistant</a>
-        <a>Domain Kustom</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/editor">Editor Artikel</a>
+        <a href="/pricing">Harga</a>
+        <a href="/docs">Dokumentasi</a>
       </div>
 
       <div>
         <b>Perusahaan</b>
-        <a>Tentang</a>
-        <a>Harga</a>
-        <a>Kontak</a>
-        <a>Bantuan</a>
+        <a href="/about">Tentang</a>
+        <a href="/contact">Kontak</a>
+        <a href="/security">Keamanan</a>
+        <a href="/status">Status</a>
       </div>
 
       <div>
-        <b>Dukungan</b>
-        <a>Dokumentasi</a>
-        <a>Status Sistem</a>
-        <a>Keamanan</a>
-        <a>Privasi</a>
+        <b>Platform</b>
+        <a href="/login">Masuk</a>
+        <a href="/settings">Pengaturan</a>
+        <a href="/docs">Panduan</a>
+        <a href="/security">Privasi</a>
       </div>
     </footer>
   );

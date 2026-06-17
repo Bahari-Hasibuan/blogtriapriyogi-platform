@@ -1,7 +1,7 @@
 export default function Navbar() {
   return (
     <header className="navbar">
-      <a className="brand" href="#">
+      <a className="brand" href="/">
         <div className="brandMark">TA</div>
         <div>
           <strong>TriApriyogi</strong>
@@ -10,15 +10,17 @@ export default function Navbar() {
       </a>
 
       <nav className="navLinks">
-        <a href="#features">Fitur</a>
-        <a href="#ai">AI Studio</a>
-        <a href="#pricing">Harga</a>
-        <a href="#faq">FAQ</a>
+        <a href="#features">Produk</a>
+        <a href="/pricing">Harga</a>
+        <a href="/docs">Dokumentasi</a>
+        <a href="/security">Security</a>
+        <a href="/about">Perusahaan</a>
+        <a href="/contact">Kontak</a>
       </nav>
 
       <div className="navActions">
         <a className="ghostButton" href="/login">Masuk</a>
-        <a className="solidButton small" href="#pricing">Mulai</a>
+        <a className="solidButton small" href="/dashboard">Dashboard</a>
       </div>
     </header>
   );
