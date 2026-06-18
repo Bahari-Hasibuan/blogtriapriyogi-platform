@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 type Tab = "write" | "settings" | "preview";
+type EditorMode = "visual" | "text" | "code" | "html" | "json";
 type ImageSize = "medium" | "large" | "xlarge" | "full";
 type ImageAlign = "left" | "center" | "right";
 type ImageAspect =
@@ -219,6 +220,102 @@ function renderContent(value: string) {
     .join("");
 }
 
+
+
+function contentToFriendlyText(value: string) {
+  let imageNumber = 0;
+  let videoNumber = 0;
+
+  return String(value || "")
+    .split("\n")
+    .map((line) => {
+      const imageMatch = line.trim().match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
+
+      if (imageMatch) {
+        imageNumber += 1;
+        const meta = parseImageMeta(imageMatch[3]);
+        const caption = meta.caption || imageMatch[1] || "Gambar artikel";
+        return `[[GAMBAR ${imageNumber}: ${caption}]]`;
+      }
+
+      if (line.trim().startsWith("@video ")) {
+        videoNumber += 1;
+        return `[[VIDEO ${videoNumber}]]`;
+      }
+
+      return line;
+    })
+    .join("\n");
+}
+
+function friendlyTextToContent(friendly: string, originalContent: string) {
+  const mediaLines: string[] = [];
+
+  String(originalContent || "")
+    .split("\n")
+    .forEach((line) => {
+      const clean = line.trim();
+
+      if (
+        clean.match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/) ||
+        clean.startsWith("@video ")
+      ) {
+        mediaLines.push(line);
+      }
+    });
+
+  let mediaIndex = 0;
+
+  return String(friendly || "")
+    .split("\n")
+    .map((line) => {
+      if (line.trim().match(/^\[\[(GAMBAR|VIDEO)\s+\d+.*\]\]$/)) {
+        const media = mediaLines[mediaIndex] || "";
+        mediaIndex += 1;
+        return media;
+      }
+
+      return line;
+    })
+    .join("\n");
+}
+
+function htmlToArticleContent(html: string) {
+  let next = String(html || "");
+
+  next = next
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "")
+    .replace(/on\w+="[^"]*"/gi, "")
+    .replace(/javascript:/gi, "");
+
+  next = next.replace(
+    /<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/gi,
+    (_match, src, alt) => {
+      const cleanAlt = cleanMetaValue(alt || "Gambar artikel");
+      return `\n\n![${cleanAlt}](${src}){size=large;align=center;aspect=original;caption=${cleanAlt};link=}\n\n`;
+    }
+  );
+
+  next = next
+    .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, "\n\n## $1\n\n")
+    .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, "\n\n### $1\n\n")
+    .replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, "\n\n> $1\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<p[^>]*>/gi, "")
+    .replace(/<strong[^>]*>([\s\S]*?)<\/strong>/gi, "**$1**")
+    .replace(/<b[^>]*>([\s\S]*?)<\/b>/gi, "**$1**")
+    .replace(/<em[^>]*>([\s\S]*?)<\/em>/gi, "_$1_")
+    .replace(/<i[^>]*>([\s\S]*?)<\/i>/gi, "_$1_")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+
+  return next.trim();
+}
+
 export default function PostEditor() {
   const router = useRouter();
   const textRef = useRef<HTMLTextAreaElement | null>(null);
@@ -243,6 +340,11 @@ export default function PostEditor() {
 
   const [defaultImageSize, setDefaultImageSize] = useState<ImageSize>("large");
   const [defaultImageAspect, setDefaultImageAspect] = useState<ImageAspect>("original");
+  const [editorMode, setEditorMode] = useState<EditorMode>("visual");
+  const [textDraft, setTextDraft] = useState("");
+  const [codeDraft, setCodeDraft] = useState("");
+  const [htmlDraft, setHtmlDraft] = useState("");
+  const [jsonDraft, setJsonDraft] = useState("");
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
   const [selectedImageAlt, setSelectedImageAlt] = useState("");
@@ -264,6 +366,80 @@ export default function PostEditor() {
     const activeSite = blogSlug || "nama-anda";
     return `https://${activeSite}.triapriyogi.com/${activeSlug}.html`;
   }, [blogSlug, slug, title]);
+
+  function articleStateToJson() {
+    return JSON.stringify(
+      {
+        title,
+        slug,
+        excerpt,
+        seoTitle,
+        seoDescription,
+        content,
+        images: articleImages,
+      },
+      null,
+      2
+    );
+  }
+
+  function switchEditorMode(mode: EditorMode) {
+    if (mode === "text") {
+      setTextDraft(contentToFriendlyText(content));
+    }
+
+    if (mode === "code") {
+      setCodeDraft(content);
+    }
+
+    if (mode === "html") {
+      setHtmlDraft(renderContent(content));
+    }
+
+    if (mode === "json") {
+      setJsonDraft(articleStateToJson());
+    }
+
+    setEditorMode(mode);
+    setTab("write");
+  }
+
+  function applyTextDraft() {
+    setContent(friendlyTextToContent(textDraft, content));
+    setEditorMode("visual");
+    setMessage("Teks berhasil diterapkan. Gambar tetap tersimpan tanpa menampilkan URL.");
+  }
+
+  function applyCodeDraft() {
+    setContent(codeDraft);
+    setEditorMode("visual");
+    setMessage("Kode artikel berhasil diterapkan.");
+  }
+
+  function applyHtmlDraft() {
+    setContent(htmlToArticleContent(htmlDraft));
+    setEditorMode("visual");
+    setMessage("HTML berhasil diterapkan ke artikel.");
+  }
+
+  function applyJsonDraft() {
+    try {
+      const parsed = JSON.parse(jsonDraft);
+
+      if (typeof parsed.title === "string") setTitle(parsed.title);
+      if (typeof parsed.slug === "string") setSlug(makeSlug(parsed.slug));
+      if (typeof parsed.excerpt === "string") setExcerpt(parsed.excerpt);
+      if (typeof parsed.seoTitle === "string") setSeoTitle(parsed.seoTitle);
+      if (typeof parsed.seoDescription === "string") setSeoDescription(parsed.seoDescription);
+      if (typeof parsed.content === "string") setContent(parsed.content);
+
+      setEditorMode("visual");
+      setMessage("JSON berhasil diterapkan ke artikel.");
+    } catch {
+      setMessage("JSON belum valid. Periksa tanda koma, kurung, dan petik.");
+    }
+  }
+
 
   useEffect(() => {
     async function load() {
@@ -487,7 +663,8 @@ export default function PostEditor() {
     );
 
     setSaving(false);
-    setTab("preview");
+    setTab("write");
+    setEditorMode("visual");
     setMessage(`Gambar berhasil masuk. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
   }
 
@@ -782,9 +959,47 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 }}
               />
 
-              <div className="editor-compose-grid">
+              <div className="editor-mode-tabs">
+                <button
+                  className={editorMode === "visual" ? "active" : ""}
+                  onClick={() => switchEditorMode("visual")}
+                  type="button"
+                >
+                  Visual
+                </button>
+                <button
+                  className={editorMode === "text" ? "active" : ""}
+                  onClick={() => switchEditorMode("text")}
+                  type="button"
+                >
+                  Teks
+                </button>
+                <button
+                  className={editorMode === "code" ? "active" : ""}
+                  onClick={() => switchEditorMode("code")}
+                  type="button"
+                >
+                  Kode
+                </button>
+                <button
+                  className={editorMode === "html" ? "active" : ""}
+                  onClick={() => switchEditorMode("html")}
+                  type="button"
+                >
+                  HTML
+                </button>
+                <button
+                  className={editorMode === "json" ? "active" : ""}
+                  onClick={() => switchEditorMode("json")}
+                  type="button"
+                >
+                  JSON
+                </button>
+              </div>
+
+              {editorMode === "visual" && (
                 <section
-                  className="editor-visual-draft"
+                  className="editor-visual-draft visual-only"
                   onClick={(event) => {
                     const target = event.target as HTMLElement;
                     const item = target.closest("[data-image-index]") as HTMLElement | null;
@@ -801,29 +1016,110 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                   <small>Tampilan artikel</small>
                   <h1>{title || "Judul artikel"}</h1>
                   <p>{excerpt || "Ringkasan artikel akan tampil di sini."}</p>
-                  <div dangerouslySetInnerHTML={{ __html: renderContent(content) }} />
-                </section>
 
-                <section className="editor-source-draft">
+                  {content.trim() ? (
+                    <div dangerouslySetInnerHTML={{ __html: renderContent(content) }} />
+                  ) : (
+                    <div className="visual-empty">
+                      Mulai menulis dari mode Teks, atau gunakan tombol gambar/video di toolbar.
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {editorMode === "text" && (
+                <section className="editor-source-draft clean-text-editor">
                   <div className="source-head">
                     <div>
-                      <b>Kode artikel</b>
-                      <span>URL gambar dan pengaturan tersimpan di sini.</span>
+                      <b>Teks artikel</b>
+                      <span>Mode nyaman untuk menulis. Gambar disimpan sebagai kartu, URL tidak ditampilkan.</span>
                     </div>
-                    <button type="button" onClick={() => setTab("preview")}>
-                      ⚙️ Atur gambar
+                    <button type="button" onClick={applyTextDraft}>
+                      Terapkan teks
                     </button>
                   </div>
 
                   <textarea
                     ref={textRef}
-                    className="editor-body"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="Mulai tulis artikel Anda di sini..."
+                    className="editor-body clean-text-mode"
+                    value={textDraft}
+                    onChange={(e) => setTextDraft(e.target.value)}
+                    placeholder="Tulis isi artikel di sini. Gambar akan tampil sebagai kartu [[GAMBAR 1: ...]], bukan URL."
+                  />
+
+                  <div className="clean-text-help">
+                    <b>Catatan:</b>
+                    <span>
+                      Kartu gambar dan video bisa dipindah posisinya di teks. Untuk mengubah caption, link, ukuran,
+                      posisi, dan bentuk gambar, klik gambar di mode Visual.
+                    </span>
+                  </div>
+                </section>
+              )}
+
+              {editorMode === "code" && (
+                <section className="editor-source-draft">
+                  <div className="source-head">
+                    <div>
+                      <b>Kode sumber</b>
+                      <span>Mode ahli. URL gambar, video, dan pengaturan media tampil di sini.</span>
+                    </div>
+                    <button type="button" onClick={applyCodeDraft}>
+                      Terapkan kode
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="editor-body code-mode"
+                    value={codeDraft}
+                    onChange={(e) => setCodeDraft(e.target.value)}
+                    placeholder="Kode sumber artikel akan tampil di sini."
                   />
                 </section>
-              </div>
+              )}
+
+              {editorMode === "html" && (
+                <section className="editor-source-draft">
+                  <div className="source-head">
+                    <div>
+                      <b>HTML</b>
+                      <span>Untuk pengguna ahli. Kode berbahaya akan dibersihkan.</span>
+                    </div>
+                    <button type="button" onClick={applyHtmlDraft}>
+                      Terapkan HTML
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="editor-body code-mode"
+                    value={htmlDraft}
+                    onChange={(e) => setHtmlDraft(e.target.value)}
+                    placeholder="<h2>Subjudul</h2><p>Isi artikel...</p>"
+                  />
+                </section>
+              )}
+
+              {editorMode === "json" && (
+                <section className="editor-source-draft">
+                  <div className="source-head">
+                    <div>
+                      <b>JSON</b>
+                      <span>Untuk struktur artikel, SEO, metadata, dan konten.</span>
+                    </div>
+                    <button type="button" onClick={applyJsonDraft}>
+                      Terapkan JSON
+                    </button>
+                  </div>
+
+                  <textarea
+                    className="editor-body code-mode"
+                    value={jsonDraft}
+                    onChange={(e) => setJsonDraft(e.target.value)}
+                    placeholder='{"title":"Judul artikel","content":"Isi artikel"}'
+                  />
+                </section>
+              )}
+
             </>
           )}
 
