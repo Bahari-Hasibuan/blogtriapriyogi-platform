@@ -41,6 +41,46 @@ function getYouTubeId(value: string) {
   return "";
 }
 
+function parseImageMeta(raw?: string) {
+  const meta = {
+    size: "large",
+    align: "center",
+    caption: "",
+    link: "",
+  };
+
+  const value = String(raw || "").trim();
+
+  if (value === "medium" || value === "large" || value === "xlarge" || value === "full") {
+    meta.size = value;
+    return meta;
+  }
+
+  value.split(";").forEach((part) => {
+    const [key, ...rest] = part.split("=");
+    const cleanKey = key?.trim();
+    const cleanValue = rest.join("=").trim();
+
+    if (cleanKey === "size" && ["medium", "large", "xlarge", "full"].includes(cleanValue)) {
+      meta.size = cleanValue;
+    }
+
+    if (cleanKey === "align" && ["left", "center", "right"].includes(cleanValue)) {
+      meta.align = cleanValue;
+    }
+
+    if (cleanKey === "caption") {
+      meta.caption = cleanValue;
+    }
+
+    if (cleanKey === "link") {
+      meta.link = cleanValue;
+    }
+  });
+
+  return meta;
+}
+
 function renderContent(value: string) {
   return String(value || "")
     .split("
@@ -59,14 +99,19 @@ function renderContent(value: string) {
         return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
-      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(medium|large|xlarge)\})?$/);
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
 
       if (imageMatch) {
         const alt = imageMatch[1] || "Gambar artikel";
         const src = imageMatch[2] || "";
-        const size = imageMatch[3] || "large";
+        const meta = parseImageMeta(imageMatch[3]);
+        const caption = meta.caption || alt;
+        const imageHtml = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" />`;
+        const linkedImage = meta.link
+          ? `<a href="${escapeAttr(meta.link)}" target="_blank" rel="noopener noreferrer">${imageHtml}</a>`
+          : imageHtml;
 
-        return `<figure class="article-image image-${escapeAttr(size)}"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+        return `<figure class="article-image image-${escapeAttr(meta.size)} align-${escapeAttr(meta.align)}">${linkedImage}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
       }
 
       const escaped = escapeHtml(rawLine);

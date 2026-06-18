@@ -45,7 +45,114 @@ function getYouTubeId(value: string) {
   return "";
 }
 
+type ImageSize = "medium" | "large" | "xlarge" | "full";
+type ImageAlign = "left" | "center" | "right";
+
+type ArticleImage = {
+  imageIndex: number;
+  lineIndex: number;
+  alt: string;
+  src: string;
+  caption: string;
+  link: string;
+  size: ImageSize;
+  align: ImageAlign;
+};
+
+function parseImageMeta(raw?: string) {
+  const meta = {
+    size: "large" as ImageSize,
+    align: "center" as ImageAlign,
+    caption: "",
+    link: "",
+  };
+
+  const value = String(raw || "").trim();
+
+  if (value === "medium" || value === "large" || value === "xlarge" || value === "full") {
+    meta.size = value;
+    return meta;
+  }
+
+  value.split(";").forEach((part) => {
+    const [key, ...rest] = part.split("=");
+    const cleanKey = key?.trim();
+    const cleanValue = rest.join("=").trim();
+
+    if (cleanKey === "size" && ["medium", "large", "xlarge", "full"].includes(cleanValue)) {
+      meta.size = cleanValue as ImageSize;
+    }
+
+    if (cleanKey === "align" && ["left", "center", "right"].includes(cleanValue)) {
+      meta.align = cleanValue as ImageAlign;
+    }
+
+    if (cleanKey === "caption") {
+      meta.caption = cleanValue;
+    }
+
+    if (cleanKey === "link") {
+      meta.link = cleanValue;
+    }
+  });
+
+  return meta;
+}
+
+function cleanMetaValue(value: string) {
+  return String(value || "")
+    .replaceAll("{", "")
+    .replaceAll("}", "")
+    .replaceAll(";", ",")
+    .trim();
+}
+
+function imageMetaToString(data: {
+  size: ImageSize;
+  align: ImageAlign;
+  caption?: string;
+  link?: string;
+}) {
+  return [
+    `size=${data.size}`,
+    `align=${data.align}`,
+    `caption=${cleanMetaValue(data.caption || "")}`,
+    `link=${cleanMetaValue(data.link || "")}`,
+  ].join(";");
+}
+
+function parseArticleImages(value: string): ArticleImage[] {
+  let imageIndex = 0;
+
+  return String(value || "")
+    .split("
+")
+    .map((line, lineIndex) => {
+      const match = line.trim().match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
+
+      if (!match) return null;
+
+      const meta = parseImageMeta(match[3]);
+      const item: ArticleImage = {
+        imageIndex,
+        lineIndex,
+        alt: match[1] || "",
+        src: match[2] || "",
+        caption: meta.caption,
+        link: meta.link,
+        size: meta.size,
+        align: meta.align,
+      };
+
+      imageIndex += 1;
+      return item;
+    })
+    .filter(Boolean) as ArticleImage[];
+}
+
 function renderContent(value: string) {
+  let imageIndex = 0;
+
   return String(value || "")
     .split("
 ")
@@ -63,14 +170,22 @@ function renderContent(value: string) {
         return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
-      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(medium|large|xlarge)\})?$/);
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
 
       if (imageMatch) {
+        const currentIndex = imageIndex;
+        imageIndex += 1;
+
         const alt = imageMatch[1] || "Gambar artikel";
         const src = imageMatch[2] || "";
-        const size = imageMatch[3] || "large";
+        const meta = parseImageMeta(imageMatch[3]);
+        const caption = meta.caption || alt;
+        const imageHtml = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" />`;
+        const linkedImage = meta.link
+          ? `<a href="${escapeAttr(meta.link)}" target="_blank" rel="noopener noreferrer">${imageHtml}</a>`
+          : imageHtml;
 
-        return `<figure class="article-image image-${escapeAttr(size)}"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+        return `<figure class="article-image image-${escapeAttr(meta.size)} align-${escapeAttr(meta.align)}" data-image-index="${currentIndex}">${linkedImage}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
       }
 
       const escaped = escapeHtml(rawLine);
@@ -113,6 +228,8 @@ export default function PostEditor() {
   }, [content]);
 
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+  const articleImages = useMemo(() => parseArticleImages(content), [content]);
 
   const publicUrl = useMemo(() => {
     const activeSlug = makeSlug(slug || title || "artikel-baru");
@@ -264,6 +381,47 @@ export default function PostEditor() {
   }
 
 
+
+  function selectImageForEditing(index: number) {
+    const image = articleImages.find((item) => item.imageIndex === index);
+
+    if (!image) return;
+
+    setSelectedImageIndex(index);
+    setSelectedImageAlt(image.alt);
+    setSelectedImageCaption(image.caption);
+    setSelectedImageLink(image.link);
+    setSelectedImageSize(image.size);
+    setSelectedImageAlign(image.align);
+    setTab("preview");
+    setMessage("Gambar dipilih. Atur detailnya di panel kanan.");
+  }
+
+  function applyImageSettings() {
+    const image = articleImages.find((item) => item.imageIndex === selectedImageIndex);
+
+    if (!image) {
+      setMessage("Pilih gambar terlebih dahulu.");
+      return;
+    }
+
+    const lines = content.split("\n");
+    const alt = cleanMetaValue(selectedImageAlt || "Gambar artikel");
+    const caption = cleanMetaValue(selectedImageCaption);
+    const link = cleanMetaValue(selectedImageLink);
+
+    lines[image.lineIndex] = `![${alt}](${image.src}){${imageMetaToString({
+      size: selectedImageSize,
+      align: selectedImageAlign,
+      caption,
+      link,
+    })}}`;
+
+    setContent(lines.join("\n"));
+    setMessage("Pengaturan gambar berhasil diterapkan.");
+  }
+
+
   async function uploadImage(file: File) {
     if (!file) return;
 
@@ -333,7 +491,7 @@ export default function PostEditor() {
       .from("article-media")
       .getPublicUrl(path).data.publicUrl;
 
-    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl}){${imageSize}}\n\n`);
+    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl}){size=${imageSize};align=center;caption=${safeName || "Gambar artikel"};link=}\n\n`);
 
     setSaving(false);
     setMessage(`Gambar berhasil dikompres dan dimasukkan. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
@@ -549,6 +707,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                   <option value="medium">Gambar sedang</option>
                   <option value="large">Gambar besar</option>
                   <option value="xlarge">Gambar extra besar</option>
+                  <option value="full">Gambar full lebar</option>
                 </select>
                 <button onClick={() => fileRef.current?.click()}>▧ Gambar</button>
                 <button onClick={insertYouTubeVideo}>▶ YouTube</button>
@@ -618,7 +777,21 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
           )}
 
           {tab === "preview" && (
-            <article className="editor-preview">
+            <article
+              className="editor-preview"
+              onClick={(event) => {
+                const target = event.target as HTMLElement;
+                const item = target.closest("[data-image-index]") as HTMLElement | null;
+
+                if (!item) return;
+
+                const index = Number(item.dataset.imageIndex || "-1");
+
+                if (index >= 0) {
+                  selectImageForEditing(index);
+                }
+              }}
+            >
               <small>{blogName}</small>
               <h1>{title || "Judul artikel"}</h1>
               <p>{excerpt || "Ringkasan artikel akan tampil di sini."}</p>
@@ -636,6 +809,94 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
             <button className="publish" onClick={() => savePost("published")} disabled={saving}>
               ✈ Publikasikan artikel
             </button>
+          </div>
+
+          <div className="editor-panel image-tools-panel">
+            <p>Gambar artikel</p>
+
+            {articleImages.length === 0 ? (
+              <span className="image-tools-empty">
+                Belum ada gambar. Upload gambar dari tombol Gambar di toolbar.
+              </span>
+            ) : (
+              <div className="image-list">
+                {articleImages.map((image) => (
+                  <button
+                    key={`${image.lineIndex}-${image.src}`}
+                    className={selectedImageIndex === image.imageIndex ? "active" : ""}
+                    onClick={() => selectImageForEditing(image.imageIndex)}
+                  >
+                    <img src={image.src} alt={image.alt || "Gambar"} />
+                    <span>
+                      <b>{image.alt || "Gambar artikel"}</b>
+                      <small>{image.size} · {image.align}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selectedImageIndex >= 0 && (
+              <div className="editor-image-editor-panel">
+                <label>
+                  Masukkan link
+                  <input
+                    value={selectedImageLink}
+                    onChange={(e) => setSelectedImageLink(e.target.value)}
+                    placeholder="https://contoh.com atau kosongkan"
+                  />
+                </label>
+
+                <label>
+                  Alt text
+                  <input
+                    value={selectedImageAlt}
+                    onChange={(e) => setSelectedImageAlt(e.target.value)}
+                    placeholder="Deskripsi gambar untuk SEO"
+                  />
+                </label>
+
+                <label>
+                  Teks gambar
+                  <textarea
+                    value={selectedImageCaption}
+                    onChange={(e) => setSelectedImageCaption(e.target.value)}
+                    placeholder="Caption yang tampil di bawah gambar"
+                  />
+                </label>
+
+                <div className="image-settings-grid">
+                  <label>
+                    Ukuran
+                    <select
+                      value={selectedImageSize}
+                      onChange={(e) => setSelectedImageSize(e.target.value as ImageSize)}
+                    >
+                      <option value="medium">Sedang</option>
+                      <option value="large">Besar</option>
+                      <option value="xlarge">Extra besar</option>
+                      <option value="full">Full lebar</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Posisi
+                    <select
+                      value={selectedImageAlign}
+                      onChange={(e) => setSelectedImageAlign(e.target.value as ImageAlign)}
+                    >
+                      <option value="center">Tengah</option>
+                      <option value="left">Kiri</option>
+                      <option value="right">Kanan</option>
+                    </select>
+                  </label>
+                </div>
+
+                <button onClick={applyImageSettings}>
+                  Terapkan ke gambar
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="editor-panel">
