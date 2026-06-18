@@ -1,184 +1,133 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+import "../../../components/public-site.css";
 
-type PageProps = {
-  params: Promise<{
-    site: string;
-    article: string;
-  }>;
-};
+export const dynamic = "force-dynamic";
 
-type PublicProfile = {
-  id: string;
-  blog_name: string;
-  blog_slug: string;
-  blog_category: string | null;
-  site_description: string | null;
-};
-
-type PublicPost = {
-  id: string;
-  title: string;
-  slug: string | null;
-  excerpt: string | null;
-  content: string | null;
-  created_at: string | null;
-};
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
 function cleanArticleSlug(value: string) {
-  return value.replace(/\.html$/i, "");
+  return decodeURIComponent(value || "").replace(/\.html$/i, "");
 }
 
-async function fetchPublicProfile(slug: string): Promise<PublicProfile | null> {
-  if (!supabaseUrl || !anonKey) return null;
-
-  const res = await fetch(
-    `${supabaseUrl}/rest/v1/public_profiles?blog_slug=eq.${encodeURIComponent(
-      slug
-    )}&select=id,blog_name,blog_slug,blog_category,site_description`,
-    {
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-      },
-      next: { revalidate: 60 },
-    }
-  );
-
-  if (!res.ok) return null;
-
-  const data = (await res.json()) as PublicProfile[];
-  return data[0] || null;
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
-async function fetchPost(userId: string, slug: string): Promise<PublicPost | null> {
-  if (!supabaseUrl || !anonKey) return null;
-
-  const res = await fetch(
-    `${supabaseUrl}/rest/v1/posts?user_id=eq.${encodeURIComponent(
-      userId
-    )}&slug=eq.${encodeURIComponent(
-      slug
-    )}&status=eq.published&select=id,title,slug,excerpt,content,created_at&limit=1`,
-    {
-      headers: {
-        apikey: anonKey,
-        Authorization: `Bearer ${anonKey}`,
-      },
-      next: { revalidate: 60 },
-    }
-  );
-
-  if (!res.ok) return null;
-
-  const data = (await res.json()) as PublicPost[];
-  return data[0] || null;
+function renderContent(value: string) {
+  const escaped = escapeHtml(value || "");
+  return escaped
+    .split("\n")
+    .map((line) => {
+      if (line.startsWith("### ")) return `<h3>${line.replace("### ", "")}</h3>`;
+      if (line.startsWith("## ")) return `<h2>${line.replace("## ", "")}</h2>`;
+      if (line.startsWith("> ")) return `<blockquote>${line.replace("> ", "")}</blockquote>`;
+      if (line.startsWith("- ")) return `<p>• ${line.replace("- ", "")}</p>`;
+      if (!line.trim()) return "<br />";
+      return `<p>${line}</p>`;
+    })
+    .join("");
 }
 
-export async function generateMetadata({ params }: PageProps) {
-  const { site, article } = await params;
-  const profile = await fetchPublicProfile(site);
+export async function generateMetadata(props: any) {
+  const params = await props.params;
+  const site = params.site;
+  const articleSlug = cleanArticleSlug(params.article);
 
-  if (!profile) {
-    return {
-      title: "Artikel tidak ditemukan",
-    };
+  const profile = await supabase
+    .from("public_profiles")
+    .select("id,blog_name")
+    .eq("blog_slug", site)
+    .single();
+
+  if (!profile.data) {
+    return { title: "Artikel tidak ditemukan" };
   }
 
-  const slug = cleanArticleSlug(article);
-  const post = await fetchPost(profile.id, slug);
-
-  if (!post) {
-    return {
-      title: "Artikel tidak ditemukan",
-    };
-  }
+  const post = await supabase
+    .from("posts")
+    .select("title,seo_title,seo_description,excerpt")
+    .eq("user_id", profile.data.id)
+    .eq("slug", articleSlug)
+    .eq("status", "published")
+    .single();
 
   return {
-    title: `${post.title} | ${profile.blog_name}`,
-    description:
-      post.excerpt ||
-      profile.site_description ||
-      `${post.title} dari ${profile.blog_name}`,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt || profile.site_description || "",
-      type: "article",
-    },
+    title: post.data?.seo_title || post.data?.title || profile.data.blog_name,
+    description: post.data?.seo_description || post.data?.excerpt || "",
   };
 }
 
-export default async function PublicArticlePage({ params }: PageProps) {
-  const { site, article } = await params;
-  const profile = await fetchPublicProfile(site);
+export default async function PublicArticlePage(props: any) {
+  const params = await props.params;
+  const site = params.site;
+  const articleSlug = cleanArticleSlug(params.article);
 
-  if (!profile) notFound();
+  const profile = await supabase
+    .from("public_profiles")
+    .select("id,blog_name,blog_slug,blog_category,site_description,site_theme")
+    .eq("blog_slug", site)
+    .single();
 
-  const articleSlug = cleanArticleSlug(article);
-  const post = await fetchPost(profile.id, articleSlug);
+  if (!profile.data) {
+    return (
+      <main className="public-site-page">
+        <section className="public-card">
+          <h1>Situs tidak ditemukan</h1>
+          <p>Alamat publik ini belum tersedia.</p>
+        </section>
+      </main>
+    );
+  }
 
-  if (!post) notFound();
+  const post = await supabase
+    .from("posts")
+    .select("title,excerpt,content,published_at,seo_title,seo_description")
+    .eq("user_id", profile.data.id)
+    .eq("slug", articleSlug)
+    .eq("status", "published")
+    .single();
 
-  const lines = (post.content || "").split("\n");
+  if (!post.data) {
+    return (
+      <main className={`public-site-page theme-${profile.data.site_theme || "aurora"}`}>
+        <section className="public-card">
+          <h1>Artikel tidak ditemukan</h1>
+          <p>Artikel ini belum dipublikasikan atau sudah dipindahkan.</p>
+        </section>
+      </main>
+    );
+  }
 
   return (
-    <main className="public-site-page">
-      <section className="public-hero article">
-        <div className="public-brand">
-          <span>{profile.blog_name.slice(0, 2).toUpperCase()}</span>
-          <div>
-            <b>{profile.blog_name}</b>
-            <small>{profile.blog_category || "Platform Digital"}</small>
-          </div>
+    <main className={`public-site-page theme-${profile.data.site_theme || "aurora"}`}>
+      <header className="public-top">
+        <div className="public-logo">
+          {(profile.data.blog_name || "TA").slice(0, 2).toUpperCase()}
         </div>
-
-        <Link href={`https://${profile.blog_slug}.triapriyogi.com`} className="public-back">
-          ← Kembali ke beranda
-        </Link>
-
-        <div className="public-hero-content">
-          <p>Artikel</p>
-          <h1>{post.title}</h1>
-          {post.excerpt && <span>{post.excerpt}</span>}
+        <div>
+          <b>{profile.data.blog_name}</b>
+          <span>{profile.data.blog_category}</span>
         </div>
-      </section>
+      </header>
 
       <article className="public-article">
-        {post.created_at && (
-          <small>
-            Dipublikasikan{" "}
-            {new Date(post.created_at).toLocaleDateString("id-ID")}
-          </small>
-        )}
+        <a className="public-back" href={`https://${profile.data.blog_slug}.triapriyogi.com`}>
+          ← Beranda
+        </a>
 
-        <div className="public-article-body">
-          {lines.map((line, index) => {
-            if (line.startsWith("### ")) {
-              return <h3 key={index}>{line.replace("### ", "")}</h3>;
-            }
+        <h1>{post.data.title}</h1>
+        <p>{post.data.excerpt}</p>
 
-            if (line.startsWith("## ")) {
-              return <h2 key={index}>{line.replace("## ", "")}</h2>;
-            }
-
-            if (line.startsWith("> ")) {
-              return <blockquote key={index}>{line.replace("> ", "")}</blockquote>;
-            }
-
-            if (line.startsWith("- ")) {
-              return <li key={index}>{line.replace("- ", "")}</li>;
-            }
-
-            if (!line.trim()) {
-              return <br key={index} />;
-            }
-
-            return <p key={index}>{line}</p>;
-          })}
-        </div>
+        <div
+          className="public-article-body"
+          dangerouslySetInnerHTML={{ __html: renderContent(post.data.content || "") }}
+        />
       </article>
     </main>
   );

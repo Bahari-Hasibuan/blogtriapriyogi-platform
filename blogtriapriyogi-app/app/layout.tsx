@@ -1,3 +1,4 @@
+import "../components/dashboard.css";
 import AuthHashRedirect from "../components/AuthHashRedirect";
 import "../components/public-site.css";
 import "../components/editor.css";
