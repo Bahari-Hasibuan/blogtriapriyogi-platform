@@ -25,7 +25,7 @@ export default function OnboardingPage() {
 
   const [blogName, setBlogName] = useState("");
   const [ownerName, setOwnerName] = useState("");
-  const [category, setCategory] = useState("Personal");
+  const [category, setCategory] = useState("Personal Brand");
   const [message, setMessage] = useState("");
 
   const slug = useMemo(() => makeSlug(blogName || "blog-saya"), [blogName]);
@@ -90,6 +90,10 @@ export default function OnboardingPage() {
       .update({
         full_name: ownerName.trim(),
         blog_name: blogName.trim(),
+        blog_slug: slug,
+        blog_category: category,
+        site_description: `${blogName.trim()} adalah platform digital yang dikelola oleh ${ownerName.trim() || "pemilik akun"}.`,
+        updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
 

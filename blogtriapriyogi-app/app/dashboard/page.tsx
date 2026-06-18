@@ -260,6 +260,13 @@ export default function DashboardPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("Kreator");
 
+  const [blogName, setBlogName] = useState("Tri Apriyogi Studio");
+  const [blogSlug, setBlogSlug] = useState("tri-apriyogi-studio");
+  const [blogCategory, setBlogCategory] = useState("Personal Brand");
+  const [siteDescription, setSiteDescription] = useState(
+    "Platform digital untuk blog, website, bisnis, brand, dan publikasi profesional."
+  );
+
   const [totalPosts, setTotalPosts] = useState(0);
   const [publishedPosts, setPublishedPosts] = useState(0);
   const [draftPosts, setDraftPosts] = useState(0);
@@ -301,7 +308,7 @@ export default function DashboardPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("blog_name")
+        .select("blog_name, blog_slug, blog_category, site_description")
         .eq("id", data.user.id)
         .single();
 
@@ -313,6 +320,23 @@ export default function DashboardPage() {
         router.replace("/onboarding");
         return;
       }
+
+      const activeBlogName = profile.blog_name.trim();
+      const activeBlogSlug = profile.blog_slug || makeBlogSlug(activeBlogName);
+      const activeBlogCategory = profile.blog_category || "Personal Brand";
+      const activeDescription =
+        profile.site_description ||
+        `${activeBlogName} adalah platform digital profesional.`;
+
+      setBlogName(activeBlogName);
+      setBlogSlug(activeBlogSlug);
+      setBlogCategory(activeBlogCategory);
+      setSiteDescription(activeDescription);
+      setSubInput(activeBlogSlug);
+
+      localStorage.setItem("tri_blog_name", activeBlogName);
+      localStorage.setItem("tri_blog_slug", activeBlogSlug);
+      localStorage.setItem("tri_blog_category", activeBlogCategory);
 
       const savedMainDomain = localStorage.getItem("tri_main_domain");
       const savedDomains = localStorage.getItem("tri_domains");
@@ -370,6 +394,16 @@ export default function DashboardPage() {
     if (!latest.error && latest.data) {
       setRecentPosts(latest.data as PostItem[]);
     }
+  }
+
+  function makeBlogSlug(value: string) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/['"]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 50);
   }
 
   function cleanDomain(value: string) {
@@ -457,6 +491,54 @@ export default function DashboardPage() {
     setNotice("Domain dihapus dari dashboard.");
   }
 
+  async function saveProfileSettings() {
+    const cleanName = blogName.trim();
+    const cleanSlug = makeBlogSlug(blogSlug || blogName);
+
+    if (cleanName.length < 3) {
+      setNotice("Nama Blog / Website / Bisnis minimal 3 karakter.");
+      return;
+    }
+
+    if (cleanSlug.length < 3) {
+      setNotice("Slug platform minimal 3 karakter.");
+      return;
+    }
+
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      router.replace("/login");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        blog_name: cleanName,
+        blog_slug: cleanSlug,
+        blog_category: blogCategory,
+        site_description: siteDescription.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.user.id);
+
+    if (error) {
+      setNotice("Gagal menyimpan identitas platform. Pastikan kolom Supabase sudah dibuat.");
+      return;
+    }
+
+    setBlogName(cleanName);
+    setBlogSlug(cleanSlug);
+    setSubInput(cleanSlug);
+
+    localStorage.setItem("tri_blog_name", cleanName);
+    localStorage.setItem("tri_blog_slug", cleanSlug);
+    localStorage.setItem("tri_blog_category", blogCategory);
+
+    setNotice("Identitas platform berhasil disimpan dan disinkronkan.");
+  }
+
   async function logout() {
     await supabase.auth.signOut();
     router.push("/login");
@@ -481,8 +563,8 @@ export default function DashboardPage() {
           <Link href="/">
             <span>TA</span>
             <div>
-              <b>Tri Apriyogi Studio</b>
-              <small>Creator Platform</small>
+              <b>{blogName}</b>
+              <small>{blogCategory || "Creator Platform"}</small>
             </div>
           </Link>
 
@@ -588,7 +670,7 @@ export default function DashboardPage() {
 
             <div className="dash-hero">
               <div>
-                <small>TriApriyogi Studio</small>
+                <small>{blogName}</small>
                 <h2>Kelola blog, konten, domain, SEO, dan AI dalam satu ruang kerja.</h2>
                 <p>
                   Dashboard modern untuk menulis, mengatur website, melihat performa,
@@ -669,6 +751,98 @@ export default function DashboardPage() {
             </div>
           </section>
         )}
+
+
+        {view === "settings" && (
+          <section className="dash-content">
+            <div className="dash-title">
+              <div>
+                <p>Pengaturan</p>
+                <h1>Identitas platform</h1>
+                <span>Sinkronkan nama Blog, Website, Bisnis, Brand, slug, dan deskripsi SEO.</span>
+              </div>
+            </div>
+
+            <div className="dash-grid-two">
+              <Panel title="Profil platform" label="Identity">
+                <div className="dash-settings-form">
+                  <label>
+                    Nama Blog / Website / Bisnis
+                    <input
+                      value={blogName}
+                      onChange={(e) => {
+                        setBlogName(e.target.value);
+                        setBlogSlug(makeBlogSlug(e.target.value));
+                      }}
+                      placeholder="Contoh: Tri Apriyogi Digital"
+                    />
+                  </label>
+
+                  <label>
+                    Slug / alamat publik
+                    <input
+                      value={blogSlug}
+                      onChange={(e) => setBlogSlug(makeBlogSlug(e.target.value))}
+                      placeholder="tri-apriyogi-digital"
+                    />
+                    <small>Preview: {blogSlug || "nama-platform"}.triapriyogi.com</small>
+                  </label>
+
+                  <label>
+                    Jenis platform
+                    <select
+                      value={blogCategory}
+                      onChange={(e) => setBlogCategory(e.target.value)}
+                    >
+                      <option>Personal Brand</option>
+                      <option>Website Bisnis</option>
+                      <option>Blog Profesional</option>
+                      <option>Edukasi / Kursus</option>
+                      <option>Media / Publikasi</option>
+                      <option>Portofolio</option>
+                      <option>Komunitas</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Deskripsi SEO
+                    <textarea
+                      value={siteDescription}
+                      onChange={(e) => setSiteDescription(e.target.value)}
+                      placeholder="Deskripsi singkat yang akan dibaca mesin pencari."
+                    />
+                  </label>
+
+                  <button onClick={saveProfileSettings}>Simpan identitas platform</button>
+                </div>
+              </Panel>
+
+              <Panel title="Preview mesin pencari" label="SEO">
+                <div className="dash-seo-preview">
+                  <small>{blogSlug || "nama-platform"}.triapriyogi.com</small>
+                  <b>{blogName || "Nama Platform"}</b>
+                  <p>{siteDescription}</p>
+                </div>
+
+                <div className="dash-dns">
+                  <div>
+                    <b>Google</b>
+                    <small>Butuh halaman publik, sitemap, dan indexing.</small>
+                  </div>
+                  <div>
+                    <b>Bing</b>
+                    <small>Bisa dihubungkan lewat Bing Webmaster Tools.</small>
+                  </div>
+                  <div>
+                    <b>Yandex</b>
+                    <small>Bisa dibaca jika robots dan sitemap terbuka.</small>
+                  </div>
+                </div>
+              </Panel>
+            </div>
+          </section>
+        )}
+
 
         {view === "domain" && (
           <section className="dash-content">
@@ -801,7 +975,7 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {view !== "home" && view !== "domain" && view !== "integrations" && (
+        {view !== "home" && view !== "settings" && view !== "domain" && view !== "integrations" && (
           <Module title={moduleCopy[view].title} subtitle={moduleCopy[view].subtitle} />
         )}
       </section>
