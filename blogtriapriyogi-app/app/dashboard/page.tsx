@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import DomainSettings from "../../components/DomainSettings";
 import "../../components/dashboard.css";
 
 type View =
@@ -1058,112 +1059,7 @@ export default function DashboardPage() {
         )}
 
 
-        {view === "domain" && (
-          <section className="dash-content">
-            <div className="dash-title">
-              <div>
-                <p>Domain</p>
-                <h1>Alamat publik & custom domain</h1>
-                <span>
-                  Atur alamat utama seperti brian.triapriyogi.com atau sambungkan domain sendiri.
-                </span>
-              </div>
-            </div>
-
-            <div className="dash-grid-two">
-              <Panel title="Alamat publik bawaan" label="Subdomain">
-                <div className="domain-manager">
-                  <label>
-                    Nama alamat
-                    <div className="domain-inline-input">
-                      <input
-                        value={publicSlugInput}
-                        onChange={(e) => setPublicSlugInput(makePublicSlug(e.target.value))}
-                        placeholder="brian"
-                      />
-                      <span>.triapriyogi.com</span>
-                    </div>
-                    <small>
-                      Contoh: brian.triapriyogi.com. Bisa diganti selama belum dipakai pengguna lain.
-                    </small>
-                  </label>
-
-                  <div className="domain-preview-card">
-                    <small>Alamat aktif</small>
-                    <b>{blogSlug || publicSlugInput || "nama"}.triapriyogi.com</b>
-                    <span>Halaman publik pengguna</span>
-                  </div>
-
-                  <button onClick={savePublicAddress} disabled={domainSaving}>
-                    {domainSaving ? "Menyimpan..." : "Simpan alamat publik"}
-                  </button>
-                </div>
-              </Panel>
-
-              <Panel title="Custom domain" label="Domain sendiri">
-                <div className="domain-manager">
-                  <label>
-                    Domain pribadi
-                    <input
-                      value={customDomainInput}
-                      onChange={(e) => setCustomDomainInput(e.target.value)}
-                      placeholder="contoh: blogbrian.com"
-                    />
-                    <small>
-                      Domain ini perlu diarahkan dari DNS pemilik domain ke Vercel.
-                    </small>
-                  </label>
-
-                  <div className="domain-dns-box">
-                    <b>Instruksi DNS</b>
-                    <span>Type: CNAME</span>
-                    <span>Name: @ atau www</span>
-                    <span>Target: cname.vercel-dns.com</span>
-                    <span>Status awal: pending</span>
-                  </div>
-
-                  <button onClick={addCustomDomainSetting} disabled={domainSaving}>
-                    {domainSaving ? "Menyimpan..." : "Tambahkan custom domain"}
-                  </button>
-                </div>
-              </Panel>
-            </div>
-
-            <Panel title="Daftar domain" label="Aktif & pending">
-              {siteDomains.length > 0 ? (
-                <div className="domain-table">
-                  {siteDomains.map((item) => (
-                    <div key={item.id} className="domain-row">
-                      <div>
-                        <b>{item.hostname}</b>
-                        <small>
-                          {item.domain_type === "system_subdomain"
-                            ? "Alamat publik bawaan"
-                            : "Custom domain"}
-                        </small>
-                      </div>
-
-                      <span className={`domain-status ${item.status}`}>
-                        {item.status}
-                      </span>
-
-                      {item.domain_type === "custom_domain" && (
-                        <button onClick={() => removeSiteDomain(item.id)}>
-                          Hapus
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="dash-empty">
-                  <b>Belum ada domain tersimpan.</b>
-                  <small>Simpan alamat publik atau tambahkan custom domain.</small>
-                </div>
-              )}
-            </Panel>
-          </section>
-        )}
+        {view === "domain" && <DomainSettings />}
 
         {view === "integrations" && (
           <section className="dash-content">
