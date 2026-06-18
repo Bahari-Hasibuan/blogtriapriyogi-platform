@@ -1,3 +1,4 @@
+import "../components/public-site.css";
 import "../components/editor.css";
 import "../components/auth.css";
 import "./globals.css";

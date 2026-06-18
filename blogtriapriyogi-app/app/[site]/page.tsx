@@ -1,5 +1,5 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import "../../components/public-site.css";
 
 type PageProps = {
   params: Promise<{ site: string }>;
@@ -21,24 +21,24 @@ type PublicPost = {
   created_at: string | null;
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 async function fetchPublicProfile(slug: string): Promise<PublicProfile | null> {
-  if (!siteUrl || !anonKey) return null;
+  if (!supabaseUrl || !anonKey) return null;
 
-  const url =
-    `${siteUrl}/rest/v1/public_profiles` +
-    `?blog_slug=eq.${encodeURIComponent(slug)}` +
-    `&select=id,blog_name,blog_slug,blog_category,site_description`;
-
-  const res = await fetch(url, {
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-    },
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/public_profiles?blog_slug=eq.${encodeURIComponent(
+      slug
+    )}&select=id,blog_name,blog_slug,blog_category,site_description`,
+    {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+      next: { revalidate: 60 },
+    }
+  );
 
   if (!res.ok) return null;
 
@@ -47,23 +47,20 @@ async function fetchPublicProfile(slug: string): Promise<PublicProfile | null> {
 }
 
 async function fetchPosts(userId: string): Promise<PublicPost[]> {
-  if (!siteUrl || !anonKey) return [];
+  if (!supabaseUrl || !anonKey) return [];
 
-  const url =
-    `${siteUrl}/rest/v1/posts` +
-    `?user_id=eq.${encodeURIComponent(userId)}` +
-    `&status=eq.published` +
-    `&select=id,title,slug,excerpt,created_at` +
-    `&order=created_at.desc` +
-    `&limit=12`;
-
-  const res = await fetch(url, {
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${anonKey}`,
-    },
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(
+    `${supabaseUrl}/rest/v1/posts?user_id=eq.${encodeURIComponent(
+      userId
+    )}&status=eq.published&select=id,title,slug,excerpt,created_at&order=created_at.desc&limit=12`,
+    {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+      next: { revalidate: 60 },
+    }
+  );
 
   if (!res.ok) return [];
   return (await res.json()) as PublicPost[];
@@ -101,6 +98,7 @@ export default async function PublicSitePage({ params }: PageProps) {
   if (!profile) notFound();
 
   const posts = await fetchPosts(profile.id);
+
   const description =
     profile.site_description ||
     `${profile.blog_name} adalah platform digital profesional.`;
@@ -124,7 +122,7 @@ export default async function PublicSitePage({ params }: PageProps) {
 
         <div className="public-address">
           <small>Alamat publik</small>
-          <b>{profile.blog_slug}</b>
+          <b>{profile.blog_slug}.triapriyogi.com</b>
         </div>
       </section>
 
@@ -137,7 +135,11 @@ export default async function PublicSitePage({ params }: PageProps) {
         {posts.length > 0 ? (
           <div className="public-post-grid">
             {posts.map((post) => (
-              <article key={post.id} className="public-post-card">
+              <Link
+                key={post.id}
+                href={`https://${profile.blog_slug}.triapriyogi.com/${post.slug || post.id}.html`}
+                className="public-post-card"
+              >
                 <small>
                   {post.created_at
                     ? new Date(post.created_at).toLocaleDateString("id-ID")
@@ -145,7 +147,7 @@ export default async function PublicSitePage({ params }: PageProps) {
                 </small>
                 <h3>{post.title}</h3>
                 <p>{post.excerpt || "Baca artikel terbaru dari platform ini."}</p>
-              </article>
+              </Link>
             ))}
           </div>
         ) : (
