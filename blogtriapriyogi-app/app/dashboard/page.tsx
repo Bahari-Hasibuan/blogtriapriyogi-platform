@@ -299,6 +299,21 @@ export default function DashboardPage() {
       setEmail(userEmail);
       setName(userName);
 
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("blog_name")
+        .eq("id", data.user.id)
+        .single();
+
+      if (
+        !profile?.blog_name ||
+        profile.blog_name === "Blog TriApriyogi" ||
+        profile.blog_name.trim().length < 3
+      ) {
+        router.replace("/onboarding");
+        return;
+      }
+
       const savedMainDomain = localStorage.getItem("tri_main_domain");
       const savedDomains = localStorage.getItem("tri_domains");
 
