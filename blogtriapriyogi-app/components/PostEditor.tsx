@@ -47,6 +47,7 @@ function getYouTubeId(value: string) {
 
 type ImageSize = "medium" | "large" | "xlarge" | "full";
 type ImageAlign = "left" | "center" | "right";
+type ImageAspect = "original" | "youtube" | "instagram-square" | "instagram-feed" | "story" | "facebook";
 
 type ArticleImage = {
   imageIndex: number;
@@ -57,12 +58,14 @@ type ArticleImage = {
   link: string;
   size: ImageSize;
   align: ImageAlign;
+  aspect: ImageAspect;
 };
 
 function parseImageMeta(raw?: string) {
   const meta = {
     size: "large" as ImageSize,
     align: "center" as ImageAlign,
+    aspect: "original" as ImageAspect,
     caption: "",
     link: "",
   };
@@ -85,6 +88,13 @@ function parseImageMeta(raw?: string) {
 
     if (cleanKey === "align" && ["left", "center", "right"].includes(cleanValue)) {
       meta.align = cleanValue as ImageAlign;
+    }
+
+    if (
+      cleanKey === "aspect" &&
+      ["original", "youtube", "instagram-square", "instagram-feed", "story", "facebook"].includes(cleanValue)
+    ) {
+      meta.aspect = cleanValue as ImageAspect;
     }
 
     if (cleanKey === "caption") {
@@ -110,12 +120,14 @@ function cleanMetaValue(value: string) {
 function imageMetaToString(data: {
   size: ImageSize;
   align: ImageAlign;
+  aspect?: ImageAspect;
   caption?: string;
   link?: string;
 }) {
   return [
     `size=${data.size}`,
     `align=${data.align}`,
+    `aspect=${data.aspect || "original"}`,
     `caption=${cleanMetaValue(data.caption || "")}`,
     `link=${cleanMetaValue(data.link || "")}`,
   ].join(";");
@@ -142,6 +154,7 @@ function parseArticleImages(value: string): ArticleImage[] {
         link: meta.link,
         size: meta.size,
         align: meta.align,
+        aspect: meta.aspect,
       };
 
       imageIndex += 1;
@@ -185,7 +198,7 @@ function renderContent(value: string) {
           ? `<a href="${escapeAttr(meta.link)}" target="_blank" rel="noopener noreferrer">${imageHtml}</a>`
           : imageHtml;
 
-        return `<figure class="article-image image-${escapeAttr(meta.size)} align-${escapeAttr(meta.align)}" data-image-index="${currentIndex}">${linkedImage}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+        return `<figure class="article-image image-${escapeAttr(meta.size)} align-${escapeAttr(meta.align)} aspect-${escapeAttr(meta.aspect)}" data-image-index="${currentIndex}">${linkedImage}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
       }
 
       const escaped = escapeHtml(rawLine);
@@ -221,7 +234,8 @@ export default function PostEditor() {
   const [content, setContent] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
-  const [imageSize, setImageSize] = useState<"medium" | "large" | "xlarge">("large");
+  const [imageSize, setImageSize] = useState<ImageSize>("large");
+  const [imageAspect, setImageAspect] = useState<ImageAspect>("original");
 
   const wordCount = useMemo(() => {
     return content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -393,6 +407,7 @@ export default function PostEditor() {
     setSelectedImageLink(image.link);
     setSelectedImageSize(image.size);
     setSelectedImageAlign(image.align);
+    setSelectedImageAspect(image.aspect);
     setTab("preview");
     setMessage("Gambar dipilih. Atur detailnya di panel kanan.");
   }
@@ -413,6 +428,7 @@ export default function PostEditor() {
     lines[image.lineIndex] = `![${alt}](${image.src}){${imageMetaToString({
       size: selectedImageSize,
       align: selectedImageAlign,
+      aspect: selectedImageAspect,
       caption,
       link,
     })}}`;
@@ -491,7 +507,7 @@ export default function PostEditor() {
       .from("article-media")
       .getPublicUrl(path).data.publicUrl;
 
-    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl}){size=${imageSize};align=center;caption=${safeName || "Gambar artikel"};link=}\n\n`);
+    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl}){size=${imageSize};align=center;aspect=${imageAspect};caption=${safeName || "Gambar artikel"};link=}\n\n`);
 
     setSaving(false);
     setMessage(`Gambar berhasil dikompres dan dimasukkan. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
@@ -701,13 +717,26 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <select
                   className="editor-image-size"
                   value={imageSize}
-                  onChange={(e) => setImageSize(e.target.value as "medium" | "large" | "xlarge")}
+                  onChange={(e) => setImageSize(e.target.value as ImageSize)}
                   title="Ukuran gambar"
                 >
                   <option value="medium">Gambar sedang</option>
                   <option value="large">Gambar besar</option>
                   <option value="xlarge">Gambar extra besar</option>
                   <option value="full">Gambar full lebar</option>
+                </select>
+                <select
+                  className="editor-image-aspect"
+                  value={imageAspect}
+                  onChange={(e) => setImageAspect(e.target.value as ImageAspect)}
+                  title="Bentuk gambar"
+                >
+                  <option value="original">Original</option>
+                  <option value="youtube">YouTube 16:9</option>
+                  <option value="instagram-square">Instagram 1:1</option>
+                  <option value="instagram-feed">Instagram 4:5</option>
+                  <option value="story">TikTok/Reels 9:16</option>
+                  <option value="facebook">Facebook 1.91:1</option>
                 </select>
                 <button onClick={() => fileRef.current?.click()}>▧ Gambar</button>
                 <button onClick={insertYouTubeVideo}>▶ YouTube</button>
@@ -717,7 +746,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
+                accept="image/*"
                 hidden
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -888,6 +917,21 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                       <option value="center">Tengah</option>
                       <option value="left">Kiri</option>
                       <option value="right">Kanan</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Bentuk
+                    <select
+                      value={selectedImageAspect}
+                      onChange={(e) => setSelectedImageAspect(e.target.value as ImageAspect)}
+                    >
+                      <option value="original">Original</option>
+                      <option value="youtube">YouTube 16:9</option>
+                      <option value="instagram-square">Instagram kotak 1:1</option>
+                      <option value="instagram-feed">Instagram feed 4:5</option>
+                      <option value="story">TikTok/Reels/Story 9:16</option>
+                      <option value="facebook">Facebook 1.91:1</option>
                     </select>
                   </label>
                 </div>

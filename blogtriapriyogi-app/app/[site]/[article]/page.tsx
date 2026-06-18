@@ -45,6 +45,7 @@ function parseImageMeta(raw?: string) {
   const meta = {
     size: "large",
     align: "center",
+    aspect: "original",
     caption: "",
     link: "",
   };
@@ -67,6 +68,13 @@ function parseImageMeta(raw?: string) {
 
     if (cleanKey === "align" && ["left", "center", "right"].includes(cleanValue)) {
       meta.align = cleanValue;
+    }
+
+    if (
+      cleanKey === "aspect" &&
+      ["original", "youtube", "instagram-square", "instagram-feed", "story", "facebook"].includes(cleanValue)
+    ) {
+      meta.aspect = cleanValue;
     }
 
     if (cleanKey === "caption") {
@@ -111,7 +119,7 @@ function renderContent(value: string) {
           ? `<a href="${escapeAttr(meta.link)}" target="_blank" rel="noopener noreferrer">${imageHtml}</a>`
           : imageHtml;
 
-        return `<figure class="article-image image-${escapeAttr(meta.size)} align-${escapeAttr(meta.align)}">${linkedImage}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
+        return `<figure class="article-image image-${escapeAttr(meta.size)} align-${escapeAttr(meta.align)} aspect-${escapeAttr(meta.aspect)}">${linkedImage}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
       }
 
       const escaped = escapeHtml(rawLine);

@@ -2222,3 +2222,63 @@
     width: 100%;
   }
 }
+
+.editor-image-aspect {
+  height: 38px;
+  border: 0;
+  border-radius: 13px;
+  padding: 0 12px;
+  color: #111827;
+  background: #f8fafc;
+  font-weight: 950;
+  outline: none;
+}
+
+.article-image.aspect-youtube img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.article-image.aspect-instagram-square img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.article-image.aspect-instagram-feed img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.article-image.aspect-story {
+  max-width: 520px;
+}
+
+.article-image.aspect-story img {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  max-height: none;
+}
+
+.article-image.aspect-facebook img {
+  width: 100%;
+  aspect-ratio: 1.91 / 1;
+  object-fit: cover;
+}
+
+.article-image.aspect-original img {
+  height: auto;
+}
+
+@media (max-width: 760px) {
+  .editor-image-aspect {
+    width: 100%;
+  }
+
+  .article-image.aspect-story {
+    max-width: 100%;
+  }
+}
