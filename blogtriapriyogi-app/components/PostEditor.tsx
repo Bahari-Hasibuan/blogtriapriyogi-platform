@@ -209,6 +209,59 @@ export default function PostEditor() {
   }
 
 
+
+  async function compressImageToWebP(file: File) {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Gambar tidak bisa dibaca."));
+      image.src = objectUrl;
+    });
+
+    const maxWidth = 1600;
+    const maxHeight = 1600;
+
+    let width = image.naturalWidth;
+    let height = image.naturalHeight;
+
+    if (width > maxWidth || height > maxHeight) {
+      const ratio = Math.min(maxWidth / width, maxHeight / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      URL.revokeObjectURL(objectUrl);
+      throw new Error("Browser tidak mendukung kompres gambar.");
+    }
+
+    ctx.drawImage(image, 0, 0, width, height);
+    URL.revokeObjectURL(objectUrl);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.78);
+    });
+
+    if (!blob) {
+      throw new Error("Gagal mengubah gambar ke WebP.");
+    }
+
+    return new File(
+      [blob],
+      `${file.name.replace(/\.[^/.]+$/, "") || "gambar"}.webp`,
+      { type: "image/webp" }
+    );
+  }
+
+
   async function uploadImage(file: File) {
     if (!file) return;
 
@@ -217,13 +270,13 @@ export default function PostEditor() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setMessage("Ukuran gambar maksimal 10 MB.");
+    if (file.size > 15 * 1024 * 1024) {
+      setMessage("Ukuran gambar terlalu besar. Maksimal upload awal 15 MB.");
       return;
     }
 
     setSaving(true);
-    setMessage("Mengunggah gambar...");
+    setMessage("Mengoptimalkan gambar...");
 
     const { data } = await supabase.auth.getUser();
 
@@ -233,7 +286,24 @@ export default function PostEditor() {
       return;
     }
 
-    const ext = file.name.split(".").pop() || "jpg";
+    let optimizedFile: File;
+
+    try {
+      optimizedFile = await compressImageToWebP(file);
+    } catch (error) {
+      setSaving(false);
+      setMessage(error instanceof Error ? error.message : "Gagal mengoptimalkan gambar.");
+      return;
+    }
+
+    if (optimizedFile.size > 2 * 1024 * 1024) {
+      setSaving(false);
+      setMessage("Gambar masih terlalu besar setelah dikompres. Gunakan gambar yang lebih ringan.");
+      return;
+    }
+
+    setMessage("Mengunggah gambar...");
+
     const safeName = file.name
       .replace(/\.[^/.]+$/, "")
       .toLowerCase()
@@ -241,13 +311,14 @@ export default function PostEditor() {
       .replace(/^-+|-+$/g, "")
       .slice(0, 40);
 
-    const path = `${data.user.id}/${Date.now()}-${safeName || "gambar"}.${ext}`;
+    const path = `${data.user.id}/${Date.now()}-${safeName || "gambar"}.webp`;
 
     const uploaded = await supabase.storage
       .from("article-media")
-      .upload(path, file, {
-        cacheControl: "3600",
+      .upload(path, optimizedFile, {
+        cacheControl: "31536000",
         upsert: false,
+        contentType: "image/webp",
       });
 
     if (uploaded.error) {
@@ -263,7 +334,7 @@ export default function PostEditor() {
     insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl})\n\n`);
 
     setSaving(false);
-    setMessage("Gambar berhasil dimasukkan ke artikel.");
+    setMessage(`Gambar berhasil dikompres dan dimasukkan. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
   }
 
   function insertYouTubeVideo() {
