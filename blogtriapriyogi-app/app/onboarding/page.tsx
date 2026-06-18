@@ -73,12 +73,12 @@ export default function OnboardingPage() {
 
   async function finishOnboarding() {
     if (!blogName.trim()) {
-      setMessage("Nama blog wajib diisi.");
+      setMessage("Nama Blog / Website / Bisnis wajib diisi.");
       return;
     }
 
     if (blogName.trim().length < 3) {
-      setMessage("Nama blog minimal 3 karakter.");
+      setMessage("Nama Blog / Website / Bisnis minimal 3 karakter.");
       return;
     }
 
@@ -131,15 +131,15 @@ export default function OnboardingPage() {
 
         <div className="onboarding-hero">
           <p>Langkah pertama</p>
-          <h1>Buat nama blog Anda</h1>
+          <h1>Buat identitas platform Anda</h1>
           <span>
-            Seperti Blogger atau WordPress, akun Anda perlu punya nama blog sebelum masuk dashboard.
+            Tentukan nama utama untuk blog, website, bisnis, brand, atau ruang digital Anda sebelum masuk dashboard.
           </span>
         </div>
 
         <div className="onboarding-form">
           <label>
-            Nama pemilik
+            Nama pemilik / pengelola
             <input
               value={ownerName}
               onChange={(e) => setOwnerName(e.target.value)}
@@ -148,37 +148,37 @@ export default function OnboardingPage() {
           </label>
 
           <label>
-            Nama blog
+            Nama Blog / Website / Bisnis
             <input
               value={blogName}
               onChange={(e) => setBlogName(e.target.value)}
-              placeholder="Contoh: Catatan Tri Apriyogi"
+              placeholder="Contoh: Tri Apriyogi Digital"
               autoFocus
             />
           </label>
 
           <label>
-            Kategori blog
+            Jenis platform
             <select value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option>Personal</option>
-              <option>Bisnis</option>
-              <option>Teknologi</option>
-              <option>Edukasi</option>
-              <option>Berita</option>
-              <option>Portfolio</option>
+              <option>Personal Brand</option>
+              <option>Website Bisnis</option>
+              <option>Blog Profesional</option>
+              <option>Edukasi / Kursus</option>
+              <option>Media / Publikasi</option>
+              <option>Portofolio</option>
               <option>Komunitas</option>
             </select>
           </label>
 
           <div className="onboarding-preview">
-            <small>Preview alamat blog</small>
+            <small>Preview alamat platform</small>
             <b>{slug}.triapriyogi.com</b>
           </div>
 
           {message && <div className="onboarding-message">{message}</div>}
 
           <button onClick={finishOnboarding} disabled={saving}>
-            {saving ? "Menyimpan..." : "Buat blog dan masuk dashboard"}
+            {saving ? "Menyimpan..." : "Simpan identitas dan masuk dashboard"}
           </button>
 
           <small className="onboarding-account">{email}</small>
