@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const ROOT_DOMAIN = "triapriyogi.com";
-
-const workspaceHosts = new Set([
-  "studio.triapriyogi.com",
-  "workspace.triapriyogi.com",
-  "app.triapriyogi.com",
-]);
+const STUDIO_HOST = "studio.triapriyogi.com";
 
 const reservedSubdomains = new Set([
   "www",
@@ -19,13 +14,32 @@ const reservedSubdomains = new Set([
   "auth",
   "login",
   "dashboard",
+  "editor",
 ]);
+
+const studioEntryPaths = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/auth",
+  "/onboarding",
+  "/dashboard",
+  "/editor",
+  "/settings",
+];
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get("host")?.split(":")[0] || "";
   const url = request.nextUrl.clone();
 
-  if (workspaceHosts.has(host) && url.pathname === "/") {
+  const isRoot = host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}`;
+
+  if (isRoot && studioEntryPaths.some((path) => url.pathname.startsWith(path))) {
+    url.hostname = STUDIO_HOST;
+    return NextResponse.redirect(url);
+  }
+
+  if (host === STUDIO_HOST && url.pathname === "/") {
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
@@ -33,7 +47,8 @@ export function middleware(request: NextRequest) {
   if (
     host.endsWith(`.${ROOT_DOMAIN}`) &&
     host !== ROOT_DOMAIN &&
-    !workspaceHosts.has(host)
+    host !== `www.${ROOT_DOMAIN}` &&
+    host !== STUDIO_HOST
   ) {
     const subdomain = host.replace(`.${ROOT_DOMAIN}`, "");
 
@@ -53,6 +68,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
   ],
 };
