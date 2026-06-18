@@ -52,6 +52,17 @@ type DomainItem = {
   status: string;
 };
 
+type SiteDomainItem = {
+  id: string;
+  domain_type: "system_subdomain" | "custom_domain";
+  hostname: string;
+  status: string;
+  is_primary: boolean;
+  verification_token?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
 const menuGroups: NavGroup[] = [
   {
     title: "Beranda",
@@ -278,6 +289,11 @@ export default function DashboardPage() {
   const [domains, setDomains] = useState<DomainItem[]>([]);
   const [notice, setNotice] = useState("");
 
+  const [publicSlugInput, setPublicSlugInput] = useState("");
+  const [customDomainInput, setCustomDomainInput] = useState("");
+  const [siteDomains, setSiteDomains] = useState<SiteDomainItem[]>([]);
+  const [domainSaving, setDomainSaving] = useState(false);
+
   const initials = useMemo(() => {
     return name
       .split(" ")
@@ -394,6 +410,204 @@ export default function DashboardPage() {
     if (!latest.error && latest.data) {
       setRecentPosts(latest.data as PostItem[]);
     }
+  }
+
+  function makePublicSlug(value: string) {
+    return value
+      .toLowerCase()
+      .trim()
+      .replace(/['"]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 50);
+  }
+
+  function isReservedPublicSlug(value: string) {
+    const reserved = new Set([
+      "www",
+      "studio",
+      "workspace",
+      "app",
+      "admin",
+      "api",
+      "auth",
+      "login",
+      "signup",
+      "dashboard",
+      "editor",
+      "settings",
+      "mail",
+      "email",
+      "support",
+      "help",
+      "blog",
+      "terms",
+      "privacy",
+    ]);
+
+    return reserved.has(value);
+  }
+
+  function cleanCustomHostname(value: string) {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace("https://", "")
+      .replace("http://", "")
+      .replace("www.", "")
+      .replaceAll("/", "");
+  }
+
+  async function loadSiteDomains(userId?: string) {
+    let activeUserId = userId;
+
+    if (!activeUserId) {
+      const { data } = await supabase.auth.getUser();
+      activeUserId = data.user?.id;
+    }
+
+    if (!activeUserId) return;
+
+    const { data, error } = await supabase
+      .from("site_domains")
+      .select("id,domain_type,hostname,status,is_primary,verification_token,created_at,updated_at")
+      .eq("user_id", activeUserId)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setSiteDomains(data as SiteDomainItem[]);
+    }
+  }
+
+  async function savePublicAddress() {
+    const nextSlug = makePublicSlug(publicSlugInput || blogSlug || blogName);
+
+    if (nextSlug.length < 3) {
+      setNotice("Alamat publik minimal 3 karakter.");
+      return;
+    }
+
+    if (isReservedPublicSlug(nextSlug)) {
+      setNotice("Alamat ini tidak bisa dipakai karena termasuk nama sistem.");
+      return;
+    }
+
+    setDomainSaving(true);
+
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      setDomainSaving(false);
+      router.replace("/login");
+      return;
+    }
+
+    const { data: taken } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("blog_slug", nextSlug)
+      .neq("id", data.user.id)
+      .maybeSingle();
+
+    if (taken?.id) {
+      setDomainSaving(false);
+      setNotice("Alamat ini sudah dipakai pengguna lain. Pilih nama lain.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        blog_slug: nextSlug,
+        blog_slug_changed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.user.id);
+
+    if (error) {
+      setDomainSaving(false);
+      setNotice("Gagal menyimpan alamat publik.");
+      return;
+    }
+
+    await supabase
+      .from("site_domains")
+      .delete()
+      .eq("user_id", data.user.id)
+      .eq("domain_type", "system_subdomain");
+
+    await supabase.from("site_domains").insert({
+      user_id: data.user.id,
+      domain_type: "system_subdomain",
+      hostname: `${nextSlug}.triapriyogi.com`,
+      status: "active",
+      is_primary: true,
+    });
+
+    setBlogSlug(nextSlug);
+    setPublicSlugInput(nextSlug);
+    localStorage.setItem("tri_blog_slug", nextSlug);
+
+    await loadSiteDomains(data.user.id);
+
+    setDomainSaving(false);
+    setNotice("Alamat publik berhasil disimpan.");
+  }
+
+  async function addCustomDomainSetting() {
+    const hostname = cleanCustomHostname(customDomainInput);
+
+    if (!hostname.includes(".")) {
+      setNotice("Custom domain belum valid. Contoh: blogbrian.com");
+      return;
+    }
+
+    if (hostname.endsWith(".triapriyogi.com") || hostname === "triapriyogi.com") {
+      setNotice("Subdomain triapriyogi.com diatur dari alamat publik, bukan custom domain.");
+      return;
+    }
+
+    setDomainSaving(true);
+
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      setDomainSaving(false);
+      router.replace("/login");
+      return;
+    }
+
+    const { error } = await supabase.from("site_domains").insert({
+      user_id: data.user.id,
+      domain_type: "custom_domain",
+      hostname,
+      status: "pending",
+      is_primary: false,
+    });
+
+    if (error) {
+      setDomainSaving(false);
+      setNotice("Gagal menambahkan domain. Mungkin domain sudah dipakai akun lain.");
+      return;
+    }
+
+    setCustomDomainInput("");
+    await loadSiteDomains(data.user.id);
+
+    setDomainSaving(false);
+    setNotice("Custom domain ditambahkan. Lanjut arahkan DNS ke Vercel.");
+  }
+
+  async function removeSiteDomain(id: string) {
+    const { error } = await supabase.from("site_domains").delete().eq("id", id);
+
+    if (error) {
+      setNotice("Gagal menghapus domain.");
+      return;
+    }
+
+    await loadSiteDomains();
+    setNotice("Domain berhasil dihapus.");
   }
 
   function makeBlogSlug(value: string) {
@@ -849,105 +1063,104 @@ export default function DashboardPage() {
             <div className="dash-title">
               <div>
                 <p>Domain</p>
-                <h1>Kelola domain dan subdomain</h1>
-                <span>Atur alamat publik, custom domain, dan koneksi DNS jika diperlukan.</span>
+                <h1>Alamat publik & custom domain</h1>
+                <span>
+                  Atur alamat utama seperti brian.triapriyogi.com atau sambungkan domain sendiri.
+                </span>
               </div>
             </div>
 
-            <div className="dash-domain-grid">
-              <Panel title="Identitas platform" label="Website">
-                <label>
-                  Identitas platform
-                  <input
-                    value={blogName}
-                    onChange={(e) => setMainDomain(e.target.value)}
-                    placeholder="triapriyogi.com"
-                  />
-                </label>
+            <div className="dash-grid-two">
+              <Panel title="Alamat publik bawaan" label="Subdomain">
+                <div className="domain-manager">
+                  <label>
+                    Nama alamat
+                    <div className="domain-inline-input">
+                      <input
+                        value={publicSlugInput}
+                        onChange={(e) => setPublicSlugInput(makePublicSlug(e.target.value))}
+                        placeholder="brian"
+                      />
+                      <span>.triapriyogi.com</span>
+                    </div>
+                    <small>
+                      Contoh: brian.triapriyogi.com. Bisa diganti selama belum dipakai pengguna lain.
+                    </small>
+                  </label>
 
-                <button className="dash-primary" onClick={saveMainDomain}>
-                  Simpan domain utama
-                </button>
+                  <div className="domain-preview-card">
+                    <small>Alamat aktif</small>
+                    <b>{blogSlug || publicSlugInput || "nama"}.triapriyogi.com</b>
+                    <span>Halaman publik pengguna</span>
+                  </div>
+
+                  <button onClick={savePublicAddress} disabled={domainSaving}>
+                    {domainSaving ? "Menyimpan..." : "Simpan alamat publik"}
+                  </button>
+                </div>
               </Panel>
 
-              <Panel title="Subdomain" label="Blog">
-                <label>
-                  Nama subdomain
-                  <div className="dash-domain-input">
+              <Panel title="Custom domain" label="Domain sendiri">
+                <div className="domain-manager">
+                  <label>
+                    Domain pribadi
                     <input
-                      value={subInput}
-                      onChange={(e) => setSubInput(e.target.value)}
-                      placeholder="blog"
+                      value={customDomainInput}
+                      onChange={(e) => setCustomDomainInput(e.target.value)}
+                      placeholder="contoh: blogbrian.com"
                     />
-                    <span>.{cleanDomain(mainDomain)}</span>
-                  </div>
-                </label>
+                    <small>
+                      Domain ini perlu diarahkan dari DNS pemilik domain ke Vercel.
+                    </small>
+                  </label>
 
-                <button className="dash-primary" onClick={addSubdomain}>
-                  Tambah subdomain
-                </button>
-              </Panel>
-
-              <Panel title="Custom domain" label="Domain">
-                <label>
-                  Domain tambahan
-                  <input
-                    value={domainInput}
-                    onChange={(e) => setDomainInput(e.target.value)}
-                    placeholder="domainanda.com"
-                  />
-                </label>
-
-                <button className="dash-primary" onClick={addDomain}>
-                  Tambah custom domain
-                </button>
-              </Panel>
-
-              <Panel title="Instruksi DNS" label="Koneksi">
-                <div className="dash-dns">
-                  <div>
-                    <b>1. Tambahkan di Vercel</b>
-                    <small>Project Settings → Domains.</small>
+                  <div className="domain-dns-box">
+                    <b>Instruksi DNS</b>
+                    <span>Type: CNAME</span>
+                    <span>Name: @ atau www</span>
+                    <span>Target: cname.vercel-dns.com</span>
+                    <span>Status awal: pending</span>
                   </div>
 
-                  <div>
-                    <b>2. Arahkan DNS</b>
-                    <small>Gunakan Cloudflare atau registrar domain.</small>
-                  </div>
-
-                  <div>
-                    <b>3. Tambahkan redirect</b>
-                    <small>Supabase Auth → URL Configuration.</small>
-                  </div>
+                  <button onClick={addCustomDomainSetting} disabled={domainSaving}>
+                    {domainSaving ? "Menyimpan..." : "Tambahkan custom domain"}
+                  </button>
                 </div>
               </Panel>
             </div>
 
-            <Panel title="Daftar domain tersimpan" label="Records">
-              <div className="dash-table">
-                <div className="head">
-                  <span>Jenis</span>
-                  <span>Domain</span>
-                  <span>Status</span>
-                  <span>Aksi</span>
-                </div>
+            <Panel title="Daftar domain" label="Aktif & pending">
+              {siteDomains.length > 0 ? (
+                <div className="domain-table">
+                  {siteDomains.map((item) => (
+                    <div key={item.id} className="domain-row">
+                      <div>
+                        <b>{item.hostname}</b>
+                        <small>
+                          {item.domain_type === "system_subdomain"
+                            ? "Alamat publik bawaan"
+                            : "Custom domain"}
+                        </small>
+                      </div>
 
-                <div className="item">
-                  <span>Utama</span>
-                  <b>{cleanDomain(mainDomain)}</b>
-                  <em>Tersimpan</em>
-                  <button disabled>Utama</button>
-                </div>
+                      <span className={`domain-status ${item.status}`}>
+                        {item.status}
+                      </span>
 
-                {domains.map((item) => (
-                  <div className="item" key={item.id}>
-                    <span>{item.kind}</span>
-                    <b>{item.value}</b>
-                    <em>{item.status}</em>
-                    <button onClick={() => removeDomain(item.id)}>Hapus</button>
-                  </div>
-                ))}
-              </div>
+                      {item.domain_type === "custom_domain" && (
+                        <button onClick={() => removeSiteDomain(item.id)}>
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="dash-empty">
+                  <b>Belum ada domain tersimpan.</b>
+                  <small>Simpan alamat publik atau tambahkan custom domain.</small>
+                </div>
+              )}
             </Panel>
           </section>
         )}
