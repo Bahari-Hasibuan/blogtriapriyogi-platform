@@ -2002,3 +2002,54 @@
 .editor-toolbar button {
   white-space: nowrap;
 }
+
+.editor-image-size {
+  height: 38px;
+  border: 0;
+  border-radius: 13px;
+  padding: 0 12px;
+  color: #111827;
+  background: #f8fafc;
+  font-weight: 950;
+  outline: none;
+}
+
+.article-image.image-medium {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.article-image.image-large {
+  max-width: 100%;
+}
+
+.article-image.image-xlarge {
+  width: min(112%, 1120px);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+
+.article-image.image-medium img {
+  max-height: 480px;
+}
+
+.article-image.image-large img {
+  max-height: 680px;
+}
+
+.article-image.image-xlarge img {
+  max-height: 820px;
+}
+
+@media (max-width: 760px) {
+  .article-image.image-xlarge {
+    width: 100%;
+    margin-left: 0;
+    transform: none;
+  }
+
+  .editor-image-size {
+    width: 100%;
+  }
+}

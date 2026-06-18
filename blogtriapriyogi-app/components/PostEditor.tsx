@@ -63,13 +63,14 @@ function renderContent(value: string) {
         return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
-      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(medium|large|xlarge)\})?$/);
 
       if (imageMatch) {
         const alt = imageMatch[1] || "Gambar artikel";
         const src = imageMatch[2] || "";
+        const size = imageMatch[3] || "large";
 
-        return `<figure class="article-image"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+        return `<figure class="article-image image-${escapeAttr(size)}"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
       }
 
       const escaped = escapeHtml(rawLine);
@@ -105,6 +106,7 @@ export default function PostEditor() {
   const [content, setContent] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
+  const [imageSize, setImageSize] = useState<"medium" | "large" | "xlarge">("large");
 
   const wordCount = useMemo(() => {
     return content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -331,7 +333,7 @@ export default function PostEditor() {
       .from("article-media")
       .getPublicUrl(path).data.publicUrl;
 
-    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl})\n\n`);
+    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl}){${imageSize}}\n\n`);
 
     setSaving(false);
     setMessage(`Gambar berhasil dikompres dan dimasukkan. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
@@ -538,6 +540,16 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <button onClick={() => insertText("[teks link](https://contoh.com)")}>🔗</button>
                 <button onClick={() => insertText("\n- ")}>☷</button>
                 <button onClick={() => insertText("\n> ")}>❝</button>
+                <select
+                  className="editor-image-size"
+                  value={imageSize}
+                  onChange={(e) => setImageSize(e.target.value as "medium" | "large" | "xlarge")}
+                  title="Ukuran gambar"
+                >
+                  <option value="medium">Gambar sedang</option>
+                  <option value="large">Gambar besar</option>
+                  <option value="xlarge">Gambar extra besar</option>
+                </select>
                 <button onClick={() => fileRef.current?.click()}>▧ Gambar</button>
                 <button onClick={insertYouTubeVideo}>▶ YouTube</button>
                 <button className="ai" onClick={generateDraft}>✦ Generate AI</button>

@@ -59,13 +59,14 @@ function renderContent(value: string) {
         return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
-      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(medium|large|xlarge)\})?$/);
 
       if (imageMatch) {
         const alt = imageMatch[1] || "Gambar artikel";
         const src = imageMatch[2] || "";
+        const size = imageMatch[3] || "large";
 
-        return `<figure class="article-image"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+        return `<figure class="article-image image-${escapeAttr(size)}"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
       }
 
       const escaped = escapeHtml(rawLine);
