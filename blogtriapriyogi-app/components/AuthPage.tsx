@@ -8,16 +8,6 @@ import type { Provider } from "@supabase/supabase-js";
 
 type AuthMode = "login" | "signup";
 
-const socialProviders: { name: string; provider: string; icon: string }[] = [
-  { name: "GitHub", provider: "github", icon: "GH" },
-  { name: "Microsoft", provider: "azure", icon: "MS" },
-  { name: "LinkedIn", provider: "linkedin_oidc", icon: "in" },
-  { name: "Apple", provider: "apple", icon: "AP" },
-  { name: "Facebook", provider: "facebook", icon: "FB" },
-  { name: "Discord", provider: "discord", icon: "DC" },
-  { name: "GitLab", provider: "gitlab", icon: "GL" },
-];
-
 export default function AuthPage({ mode }: { mode: AuthMode }) {
   const router = useRouter();
   const isSignup = mode === "signup";
@@ -30,7 +20,7 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
   const [socialLoading, setSocialLoading] = useState("");
   const [message, setMessage] = useState("");
 
-  async function loginWithSocial(provider: string, name: string) {
+  async function loginWithSocial(provider: Provider, name: string) {
     setMessage("");
     setSocialLoading(name);
 
@@ -40,12 +30,14 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
         : undefined;
 
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: provider as Provider,
-      options: { redirectTo },
+      provider,
+      options: {
+        redirectTo,
+      },
     });
 
     if (error) {
-      setMessage(`${name} belum aktif. Aktifkan dulu di Supabase Authentication.`);
+      setMessage(`${name} belum aktif atau belum tersimpan di Supabase.`);
       setSocialLoading("");
     }
   }
@@ -73,7 +65,7 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
         return;
       }
 
-      setMessage("Akun berhasil dibuat. Silakan masuk.");
+      setMessage("Akun berhasil dibuat. Silakan cek email atau masuk.");
       router.push("/login");
       return;
     }
@@ -168,10 +160,22 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
                 </div>
 
                 <div className="ta-stats">
-                  <div><b>24</b><small>Total post</small></div>
-                  <div><b>12.8K</b><small>Kunjungan</small></div>
-                  <div><b>18</b><small>Dipublikasi</small></div>
-                  <div><b>6</b><small>Draft</small></div>
+                  <div>
+                    <b>24</b>
+                    <small>Total post</small>
+                  </div>
+                  <div>
+                    <b>12.8K</b>
+                    <small>Kunjungan</small>
+                  </div>
+                  <div>
+                    <b>18</b>
+                    <small>Dipublikasi</small>
+                  </div>
+                  <div>
+                    <b>6</b>
+                    <small>Draft</small>
+                  </div>
                 </div>
               </section>
             </div>
@@ -204,22 +208,22 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
             disabled={!!socialLoading}
           >
             <span>G</span>
-            {socialLoading === "Google" ? "Menghubungkan..." : "Lanjutkan dengan Google"}
+            {socialLoading === "Google"
+              ? "Menghubungkan..."
+              : "Lanjutkan dengan Google"}
           </button>
 
-          <div className="ta-social-grid">
-            {socialProviders.map((item) => (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => loginWithSocial(item.provider, item.name)}
-                disabled={!!socialLoading}
-              >
-                <span>{item.icon}</span>
-                {item.name}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            className="ta-linkedin-btn"
+            onClick={() => loginWithSocial("linkedin_oidc" as Provider, "LinkedIn")}
+            disabled={!!socialLoading}
+          >
+            <span>in</span>
+            {socialLoading === "LinkedIn"
+              ? "Menghubungkan..."
+              : "Lanjutkan dengan LinkedIn"}
+          </button>
 
           <div className="ta-divider">
             <i />
@@ -262,8 +266,18 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
             />
           </label>
 
+          {!isSignup && (
+            <div className="ta-forgot-row">
+              <Link href="/forgot-password">Lupa password?</Link>
+            </div>
+          )}
+
           <button type="submit" className="ta-submit-btn" disabled={loading}>
-            {loading ? "Memproses..." : isSignup ? "Buat akun" : "Masuk dashboard"}
+            {loading
+              ? "Memproses..."
+              : isSignup
+              ? "Buat akun"
+              : "Masuk dashboard"}
           </button>
 
           {message && <p className="ta-message">{message}</p>}
