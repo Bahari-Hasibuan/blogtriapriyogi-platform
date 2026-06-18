@@ -17,23 +17,69 @@ function makeSlug(value: string) {
 }
 
 function escapeHtml(value: string) {
-  return value
+  return String(value || "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
 
+function escapeAttr(value: string) {
+  return escapeHtml(value).replaceAll('"', "&quot;");
+}
+
+function getYouTubeId(value: string) {
+  const input = String(value || "").trim();
+
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtube\.com\/embed\/([^?&]+)/,
+    /youtu\.be\/([^?&]+)/,
+    /youtube\.com\/shorts\/([^?&]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return "";
+}
+
 function renderContent(value: string) {
-  const escaped = escapeHtml(value || "");
-  return escaped
-    .split("\n")
-    .map((line) => {
-      if (line.startsWith("### ")) return `<h3>${line.replace("### ", "")}</h3>`;
-      if (line.startsWith("## ")) return `<h2>${line.replace("## ", "")}</h2>`;
-      if (line.startsWith("> ")) return `<blockquote>${line.replace("> ", "")}</blockquote>`;
-      if (line.startsWith("- ")) return `<p>• ${line.replace("- ", "")}</p>`;
-      if (!line.trim()) return "<br />";
-      return `<p>${line}</p>`;
+  return String(value || "")
+    .split("
+")
+    .map((rawLine) => {
+      const line = rawLine.trim();
+
+      if (line.startsWith("@youtube ")) {
+        const url = line.replace("@youtube ", "").trim();
+        const id = getYouTubeId(url);
+
+        if (!id) {
+          return `<p>${escapeHtml(rawLine)}</p>`;
+        }
+
+        return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+      }
+
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+
+      if (imageMatch) {
+        const alt = imageMatch[1] || "Gambar artikel";
+        const src = imageMatch[2] || "";
+
+        return `<figure class="article-image"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+      }
+
+      const escaped = escapeHtml(rawLine);
+
+      if (rawLine.startsWith("### ")) return `<h3>${escapeHtml(rawLine.replace("### ", ""))}</h3>`;
+      if (rawLine.startsWith("## ")) return `<h2>${escapeHtml(rawLine.replace("## ", ""))}</h2>`;
+      if (rawLine.startsWith("> ")) return `<blockquote>${escapeHtml(rawLine.replace("> ", ""))}</blockquote>`;
+      if (rawLine.startsWith("- ")) return `<p>• ${escapeHtml(rawLine.replace("- ", ""))}</p>`;
+      if (!rawLine.trim()) return "<br />";
+      return `<p>${escaped}</p>`;
     })
     .join("");
 }
@@ -41,6 +87,7 @@ function renderContent(value: string) {
 export default function PostEditor() {
   const router = useRouter();
   const textRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -160,6 +207,79 @@ export default function PostEditor() {
       el.setSelectionRange(cursor, cursor);
     }, 0);
   }
+
+
+  async function uploadImage(file: File) {
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage("File harus berupa gambar.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage("Ukuran gambar maksimal 10 MB.");
+      return;
+    }
+
+    setSaving(true);
+    setMessage("Mengunggah gambar...");
+
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      setSaving(false);
+      window.location.replace("https://triapriyogi.com/login");
+      return;
+    }
+
+    const ext = file.name.split(".").pop() || "jpg";
+    const safeName = file.name
+      .replace(/\.[^/.]+$/, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+
+    const path = `${data.user.id}/${Date.now()}-${safeName || "gambar"}.${ext}`;
+
+    const uploaded = await supabase.storage
+      .from("article-media")
+      .upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploaded.error) {
+      setSaving(false);
+      setMessage(`Gagal upload gambar: ${uploaded.error.message}`);
+      return;
+    }
+
+    const publicUrl = supabase.storage
+      .from("article-media")
+      .getPublicUrl(path).data.publicUrl;
+
+    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl})\n\n`);
+
+    setSaving(false);
+    setMessage("Gambar berhasil dimasukkan ke artikel.");
+  }
+
+  function insertYouTubeVideo() {
+    const url = window.prompt("Masukkan link YouTube:");
+
+    if (!url) return;
+
+    if (!url.includes("youtube.com") && !url.includes("youtu.be")) {
+      setMessage("Link YouTube belum valid.");
+      return;
+    }
+
+    insertText(`\n\n@youtube ${url.trim()}\n\n`);
+    setMessage("Video YouTube berhasil dimasukkan.");
+  }
+
 
   function generateDraft() {
     const activeTitle = title.trim() || "Judul artikel Anda";
@@ -347,9 +467,22 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <button onClick={() => insertText("[teks link](https://contoh.com)")}>🔗</button>
                 <button onClick={() => insertText("\n- ")}>☷</button>
                 <button onClick={() => insertText("\n> ")}>❝</button>
-                <button onClick={() => insertText("![deskripsi gambar](https://alamat-gambar.com/gambar.jpg)")}>▧</button>
+                <button onClick={() => fileRef.current?.click()}>▧ Gambar</button>
+                <button onClick={insertYouTubeVideo}>▶ YouTube</button>
                 <button className="ai" onClick={generateDraft}>✦ Generate AI</button>
               </div>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadImage(file);
+                  e.currentTarget.value = "";
+                }}
+              />
 
               <textarea
                 ref={textRef}

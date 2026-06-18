@@ -13,23 +13,69 @@ function cleanArticleSlug(value: string) {
 }
 
 function escapeHtml(value: string) {
-  return value
+  return String(value || "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
 
+function escapeAttr(value: string) {
+  return escapeHtml(value).replaceAll('"', "&quot;");
+}
+
+function getYouTubeId(value: string) {
+  const input = String(value || "").trim();
+
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtube\.com\/embed\/([^?&]+)/,
+    /youtu\.be\/([^?&]+)/,
+    /youtube\.com\/shorts\/([^?&]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return "";
+}
+
 function renderContent(value: string) {
-  const escaped = escapeHtml(value || "");
-  return escaped
-    .split("\n")
-    .map((line) => {
-      if (line.startsWith("### ")) return `<h3>${line.replace("### ", "")}</h3>`;
-      if (line.startsWith("## ")) return `<h2>${line.replace("## ", "")}</h2>`;
-      if (line.startsWith("> ")) return `<blockquote>${line.replace("> ", "")}</blockquote>`;
-      if (line.startsWith("- ")) return `<p>• ${line.replace("- ", "")}</p>`;
-      if (!line.trim()) return "<br />";
-      return `<p>${line}</p>`;
+  return String(value || "")
+    .split("
+")
+    .map((rawLine) => {
+      const line = rawLine.trim();
+
+      if (line.startsWith("@youtube ")) {
+        const url = line.replace("@youtube ", "").trim();
+        const id = getYouTubeId(url);
+
+        if (!id) {
+          return `<p>${escapeHtml(rawLine)}</p>`;
+        }
+
+        return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+      }
+
+      const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+
+      if (imageMatch) {
+        const alt = imageMatch[1] || "Gambar artikel";
+        const src = imageMatch[2] || "";
+
+        return `<figure class="article-image"><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /><figcaption>${escapeHtml(alt)}</figcaption></figure>`;
+      }
+
+      const escaped = escapeHtml(rawLine);
+
+      if (rawLine.startsWith("### ")) return `<h3>${escapeHtml(rawLine.replace("### ", ""))}</h3>`;
+      if (rawLine.startsWith("## ")) return `<h2>${escapeHtml(rawLine.replace("## ", ""))}</h2>`;
+      if (rawLine.startsWith("> ")) return `<blockquote>${escapeHtml(rawLine.replace("> ", ""))}</blockquote>`;
+      if (rawLine.startsWith("- ")) return `<p>• ${escapeHtml(rawLine.replace("- ", ""))}</p>`;
+      if (!rawLine.trim()) return "<br />";
+      return `<p>${escaped}</p>`;
     })
     .join("");
 }
