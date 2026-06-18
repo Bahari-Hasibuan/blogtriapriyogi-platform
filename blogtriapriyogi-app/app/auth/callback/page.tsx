@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
+const ROOT_ORIGIN = "https://triapriyogi.com";
+const STUDIO_ORIGIN = "https://studio.triapriyogi.com";
+
 function needsOnboarding(blogName?: string | null) {
   return (
     !blogName ||
@@ -12,11 +15,21 @@ function needsOnboarding(blogName?: string | null) {
   );
 }
 
+function buildSessionHash(accessToken: string, refreshToken: string) {
+  return `#access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(
+    refreshToken
+  )}&token_type=bearer`;
+}
+
 export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
     async function finishLogin() {
+      const isStudio =
+        typeof window !== "undefined" &&
+        window.location.hostname === "studio.triapriyogi.com";
+
       let code = "";
 
       if (typeof window !== "undefined") {
@@ -45,10 +58,28 @@ export default function AuthCallbackPage() {
         await supabase.auth.exchangeCodeForSession(code);
       }
 
+      const sessionResult = await supabase.auth.getSession();
+      const session = sessionResult.data.session;
+
+      if (!session?.access_token || !session.refresh_token) {
+        window.location.replace(`${ROOT_ORIGIN}/login`);
+        return;
+      }
+
+      if (!isStudio) {
+        window.location.replace(
+          `${STUDIO_ORIGIN}/auth/callback${buildSessionHash(
+            session.access_token,
+            session.refresh_token
+          )}`
+        );
+        return;
+      }
+
       const { data } = await supabase.auth.getUser();
 
       if (!data.user) {
-        router.replace("/login");
+        window.location.replace(`${ROOT_ORIGIN}/login`);
         return;
       }
 
@@ -92,7 +123,7 @@ export default function AuthCallbackPage() {
       >
         <b>Memproses login...</b>
         <p style={{ color: "#64748b" }}>
-          Menyiapkan akun dan mengarahkan ke langkah berikutnya.
+          Mengarahkan ke ruang kerja Studio.
         </p>
       </div>
     </main>

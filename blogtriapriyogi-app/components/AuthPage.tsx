@@ -3,10 +3,32 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+const STUDIO_ORIGIN = "https://studio.triapriyogi.com";
+
 import { supabase } from "../lib/supabase";
 import type { Provider } from "@supabase/supabase-js";
 
 type AuthMode = "login" | "signup";
+
+
+async function bridgeToStudio() {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+
+  if (!session?.access_token || !session.refresh_token) {
+    window.location.href = "/login";
+    return;
+  }
+
+  const hash =
+    "#access_token=" +
+    encodeURIComponent(session.access_token) +
+    "&refresh_token=" +
+    encodeURIComponent(session.refresh_token) +
+    "&token_type=bearer";
+
+  window.location.href = `${STUDIO_ORIGIN}/auth/callback${hash}`;
+}
 
 export default function AuthPage({ mode }: { mode: AuthMode }) {
   const router = useRouter();
@@ -82,7 +104,7 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
       return;
     }
 
-    router.push("/dashboard");
+    await bridgeToStudio();
   }
 
   return (

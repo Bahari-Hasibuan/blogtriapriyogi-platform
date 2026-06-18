@@ -17,15 +17,17 @@ const reservedSubdomains = new Set([
   "editor",
 ]);
 
-const studioEntryPaths = [
+const studioOnlyPaths = [
+  "/dashboard",
+  "/editor",
+  "/onboarding",
+  "/settings",
+];
+
+const rootOnlyPaths = [
   "/login",
   "/signup",
   "/forgot-password",
-  "/auth",
-  "/onboarding",
-  "/dashboard",
-  "/editor",
-  "/settings",
 ];
 
 export function middleware(request: NextRequest) {
@@ -34,8 +36,13 @@ export function middleware(request: NextRequest) {
 
   const isRoot = host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}`;
 
-  if (isRoot && studioEntryPaths.some((path) => url.pathname.startsWith(path))) {
+  if (isRoot && studioOnlyPaths.some((path) => url.pathname.startsWith(path))) {
     url.hostname = STUDIO_HOST;
+    return NextResponse.redirect(url);
+  }
+
+  if (host === STUDIO_HOST && rootOnlyPaths.some((path) => url.pathname.startsWith(path))) {
+    url.hostname = ROOT_DOMAIN;
     return NextResponse.redirect(url);
   }
 
