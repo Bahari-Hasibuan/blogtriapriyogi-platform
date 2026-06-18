@@ -175,8 +175,8 @@ export default function OnboardingPage() {
           </label>
 
           <div className="onboarding-preview">
-            <small>Preview alamat platform</small>
-            <b>{slug}.triapriyogi.com</b>
+            <small>Nama alamat publik</small>
+            <b>{slug}</b>
           </div>
 
           {message && <div className="onboarding-message">{message}</div>}

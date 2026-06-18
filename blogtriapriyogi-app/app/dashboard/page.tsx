@@ -151,7 +151,7 @@ const menuGroups: NavGroup[] = [
         view: "domain",
         label: "Domain",
         icon: "◎",
-        child: ["Domain utama", "Subdomain", "Custom domain", "DNS"],
+        child: ["Identitas platform", "Subdomain", "Custom domain", "DNS"],
       },
       {
         view: "integrations",
@@ -420,13 +420,13 @@ export default function DashboardPage() {
     const clean = cleanDomain(mainDomain);
 
     if (!clean.includes(".")) {
-      setNotice("Domain utama belum valid. Contoh: triapriyogi.com");
+      setNotice("Identitas platform belum valid. Contoh: triapriyogi.com");
       return;
     }
 
     setMainDomain(clean);
     localStorage.setItem("tri_main_domain", clean);
-    setNotice("Domain utama berhasil disimpan.");
+    setNotice("Identitas platform berhasil disimpan.");
   }
 
   function addDomain() {
@@ -671,7 +671,7 @@ export default function DashboardPage() {
             <div className="dash-hero">
               <div>
                 <small>{blogName}</small>
-                <h2>Kelola blog, konten, domain, SEO, dan AI dalam satu ruang kerja.</h2>
+                <h2>Kelola konten, identitas, SEO, dan AI dalam satu ruang kerja.</h2>
                 <p>
                   Dashboard modern untuk menulis, mengatur website, melihat performa,
                   dan menyiapkan pertumbuhan blog.
@@ -684,9 +684,9 @@ export default function DashboardPage() {
               </div>
 
               <aside>
-                <b>{mainDomain}</b>
-                <span>Domain utama</span>
-                <em>Siap dikonfigurasi</em>
+                <b>{blogName}</b>
+                <span>Identitas platform</span>
+                <em>Siap dipublikasikan</em>
               </aside>
             </div>
 
@@ -850,16 +850,16 @@ export default function DashboardPage() {
               <div>
                 <p>Domain</p>
                 <h1>Kelola domain dan subdomain</h1>
-                <span>Simpan domain utama, custom domain, dan subdomain blog.</span>
+                <span>Atur alamat publik, custom domain, dan koneksi DNS jika diperlukan.</span>
               </div>
             </div>
 
             <div className="dash-domain-grid">
-              <Panel title="Domain utama" label="Website">
+              <Panel title="Identitas platform" label="Website">
                 <label>
-                  Domain utama
+                  Identitas platform
                   <input
-                    value={mainDomain}
+                    value={blogName}
                     onChange={(e) => setMainDomain(e.target.value)}
                     placeholder="triapriyogi.com"
                   />
