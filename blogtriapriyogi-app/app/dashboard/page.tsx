@@ -466,7 +466,7 @@ export default function DashboardPage() {
           <Link href="/">
             <span>TA</span>
             <div>
-              <b>TriBlog</b>
+              <b>Tri Apriyogi Studio</b>
               <small>Creator Platform</small>
             </div>
           </Link>
@@ -504,6 +504,18 @@ export default function DashboardPage() {
               ))}
             </section>
           ))}
+        </div>
+
+        <div className="dash-sidebar-footer">
+          <div>
+            <span className="dash-sidebar-avatar">{initials}</span>
+            <div>
+              <b>{name}</b>
+              <small>{email || "Akun aktif"}</small>
+            </div>
+          </div>
+
+          <button onClick={logout}>Keluar</button>
         </div>
       </aside>
 
