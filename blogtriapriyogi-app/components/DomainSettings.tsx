@@ -68,7 +68,6 @@ export default function DomainSettings() {
 
   async function load() {
     const { data } = await supabase.auth.getUser();
-
     if (!data.user) return;
 
     setUserId(data.user.id);
@@ -100,7 +99,7 @@ export default function DomainSettings() {
     const nextSlug = makeSlug(slugInput);
 
     if (nextSlug.length < 3) {
-      setNotice("Alamat publik minimal 3 karakter.");
+      setNotice("Alamat minimal 3 karakter.");
       return;
     }
 
@@ -136,7 +135,7 @@ export default function DomainSettings() {
 
     if (updateProfile.error) {
       setSaving(false);
-      setNotice("Gagal menyimpan alamat publik.");
+      setNotice("Gagal menyimpan alamat.");
       return;
     }
 
@@ -157,7 +156,7 @@ export default function DomainSettings() {
     setBlogSlug(nextSlug);
     setSlugInput(nextSlug);
     setSaving(false);
-    setNotice("Alamat publik berhasil disimpan.");
+    setNotice("Alamat platform berhasil disimpan.");
     await load();
   }
 
@@ -165,12 +164,12 @@ export default function DomainSettings() {
     const hostname = cleanHostname(customInput);
 
     if (!hostname.includes(".")) {
-      setNotice("Custom domain belum valid. Contoh: blogbrian.com");
+      setNotice("Domain pribadi belum valid. Contoh: brandanda.com");
       return;
     }
 
     if (hostname === "triapriyogi.com" || hostname.endsWith(".triapriyogi.com")) {
-      setNotice("Subdomain triapriyogi.com diatur lewat alamat publik, bukan custom domain.");
+      setNotice("Alamat triapriyogi.com diatur dari kolom alamat platform, bukan domain pribadi.");
       return;
     }
 
@@ -193,7 +192,7 @@ export default function DomainSettings() {
 
     setCustomInput("");
     setSaving(false);
-    setNotice("Custom domain ditambahkan. Arahkan DNS ke Vercel.");
+    setNotice("Domain pribadi ditambahkan. Silakan pasang kode verifikasi DNS.");
     await load();
   }
 
@@ -208,9 +207,9 @@ export default function DomainSettings() {
       <div className="dash-title">
         <div>
           <p>Domain</p>
-          <h1>Alamat publik & custom domain</h1>
+          <h1>Alamat platform</h1>
           <span>
-            Atur alamat seperti {blogSlug || "nama"}.triapriyogi.com atau sambungkan domain sendiri.
+            Atur alamat publik, domain pribadi, dan verifikasi DNS untuk website pengguna.
           </span>
         </div>
       </div>
@@ -221,8 +220,8 @@ export default function DomainSettings() {
         <article className="dash-panel">
           <div className="dash-panel-head">
             <div>
-              <p>Alamat publik</p>
-              <h2>Subdomain utama</h2>
+              <p>Alamat bawaan</p>
+              <h2>Nama / brand / bisnis / website</h2>
             </div>
           </div>
 
@@ -233,21 +232,23 @@ export default function DomainSettings() {
                 <input
                   value={slugInput}
                   onChange={(e) => setSlugInput(makeSlug(e.target.value))}
-                  placeholder="brian"
+                  placeholder="contoh: andi, tokokita, studio-kopi"
                 />
                 <span>.triapriyogi.com</span>
               </div>
-              <small>Contoh hasil: brian.triapriyogi.com</small>
+              <small>
+                Gunakan nama singkat yang mudah diingat. Contoh: andi.triapriyogi.com
+              </small>
             </label>
 
             <div className="domain-preview-card">
               <small>Alamat aktif</small>
-              <b>{blogSlug || slugInput || "nama"}.triapriyogi.com</b>
-              <span>Ini halaman publik untuk {blogName || "platform pengguna"}.</span>
+              <b>{blogSlug || slugInput || "nama-anda"}.triapriyogi.com</b>
+              <span>Halaman publik untuk {blogName || "website pengguna"}.</span>
             </div>
 
             <button onClick={savePublicAddress} disabled={saving}>
-              {saving ? "Menyimpan..." : "Simpan alamat publik"}
+              {saving ? "Menyimpan..." : "Simpan alamat"}
             </button>
           </div>
         </article>
@@ -255,31 +256,33 @@ export default function DomainSettings() {
         <article className="dash-panel">
           <div className="dash-panel-head">
             <div>
-              <p>Custom domain</p>
-              <h2>Domain sendiri</h2>
+              <p>Domain pribadi</p>
+              <h2>Hubungkan domain sendiri</h2>
             </div>
           </div>
 
           <div className="domain-manager">
             <label>
-              Domain pribadi
+              Nama domain
               <input
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="contoh: blogbrian.com"
+                placeholder="contoh: brandanda.com"
               />
-              <small>Custom domain akan berstatus pending sampai DNS diarahkan.</small>
+              <small>
+                Cocok untuk pengguna yang sudah punya domain sendiri.
+              </small>
             </label>
 
             <div className="domain-dns-box">
-              <b>Instruksi DNS</b>
+              <b>Server tujuan</b>
               <span>Type: CNAME</span>
-              <span>Name: @ atau www</span>
-              <span>Target: cname.vercel-dns.com</span>
+              <span>Host: www atau subdomain pilihan</span>
+              <span>Target: connect.triapriyogi.com</span>
             </div>
 
             <button onClick={addCustomDomain} disabled={saving}>
-              {saving ? "Menyimpan..." : "Tambah custom domain"}
+              {saving ? "Menyimpan..." : "Tambah domain pribadi"}
             </button>
           </div>
         </article>
@@ -288,7 +291,7 @@ export default function DomainSettings() {
       <article className="dash-panel">
         <div className="dash-panel-head">
           <div>
-            <p>Daftar</p>
+            <p>Verifikasi DNS</p>
             <h2>Domain tersimpan</h2>
           </div>
         </div>
@@ -296,22 +299,60 @@ export default function DomainSettings() {
         {domains.length > 0 ? (
           <div className="domain-table">
             {domains.map((item) => (
-              <div key={item.id} className="domain-row">
-                <div>
-                  <b>{item.hostname}</b>
-                  <small>
-                    {item.domain_type === "system_subdomain"
-                      ? "Alamat publik bawaan"
-                      : "Custom domain"}
-                  </small>
+              <div key={item.id} className="domain-row-pro">
+                <div className="domain-row-main">
+                  <div>
+                    <b>{item.hostname}</b>
+                    <small>
+                      {item.domain_type === "system_subdomain"
+                        ? "Alamat bawaan"
+                        : "Domain pribadi"}
+                    </small>
+                  </div>
+
+                  <span className={`domain-status ${item.status}`}>
+                    {item.status === "active"
+                      ? "aktif"
+                      : item.status === "verified"
+                      ? "terverifikasi"
+                      : "menunggu verifikasi"}
+                  </span>
                 </div>
 
-                <span className={`domain-status ${item.status}`}>{item.status}</span>
+                {item.domain_type === "custom_domain" && (
+                  <div className="dns-verification-card">
+                    <div>
+                      <b>Tambahkan record TXT</b>
+                      <small>Gunakan kode ini untuk membuktikan bahwa domain milik Anda.</small>
+                    </div>
 
-                {item.domain_type === "custom_domain" ? (
-                  <button onClick={() => removeDomain(item.id)}>Hapus</button>
-                ) : (
-                  <em>Utama</em>
+                    <div className="dns-code-grid">
+                      <span>Type</span>
+                      <code>TXT</code>
+
+                      <span>Name</span>
+                      <code>_triapriyogi</code>
+
+                      <span>Value</span>
+                      <code>triapriyogi-verify={item.verification_token}</code>
+                    </div>
+
+                    <div className="dns-code-grid">
+                      <span>Server</span>
+                      <code>connect.triapriyogi.com</code>
+                    </div>
+
+                    <button onClick={() => removeDomain(item.id)}>
+                      Hapus domain
+                    </button>
+                  </div>
+                )}
+
+                {item.domain_type === "system_subdomain" && (
+                  <div className="dns-simple-card">
+                    <b>Siap digunakan</b>
+                    <small>Alamat bawaan tidak perlu verifikasi DNS manual.</small>
+                  </div>
                 )}
               </div>
             ))}
@@ -319,7 +360,7 @@ export default function DomainSettings() {
         ) : (
           <div className="dash-empty">
             <b>Belum ada domain tersimpan.</b>
-            <small>Simpan alamat publik terlebih dahulu.</small>
+            <small>Simpan alamat bawaan atau tambahkan domain pribadi.</small>
           </div>
         )}
       </article>

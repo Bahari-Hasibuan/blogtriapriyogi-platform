@@ -1342,3 +1342,83 @@
     padding: 0 14px 12px;
   }
 }
+
+.domain-row-pro {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 22px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}
+
+.domain-row-main {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.dns-verification-card,
+.dns-simple-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid #e5e7eb;
+}
+
+.dns-verification-card b,
+.dns-simple-card b {
+  color: #111827;
+}
+
+.dns-verification-card small,
+.dns-simple-card small {
+  color: #64748b;
+}
+
+.dns-code-grid {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.dns-code-grid span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.dns-code-grid code {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f5f3ff;
+  color: #4c1d95;
+  font-size: 12px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.dns-verification-card button {
+  height: 38px;
+  width: fit-content;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 14px;
+  color: #991b1b;
+  background: #fee2e2;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .domain-row-main,
+  .dns-code-grid {
+    grid-template-columns: 1fr;
+  }
+}
