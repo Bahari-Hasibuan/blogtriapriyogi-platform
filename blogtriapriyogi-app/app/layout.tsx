@@ -1,3 +1,4 @@
+import AuthHashRedirect from "../components/AuthHashRedirect";
 import "../components/public-site.css";
 import "../components/editor.css";
 import "../components/auth.css";
@@ -21,7 +22,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body>
+        <AuthHashRedirect />{children}</body>
     </html>
   );
 }
