@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import DomainSettings from "../../components/DomainSettings";
 import PostsManager from "../../components/PostsManager";
+import PagesManager from "../../components/PagesManager";
 import "../../components/dashboard.css";
 
 type View =
@@ -1061,6 +1062,8 @@ export default function DashboardPage() {
 
 
         {view === "posts" && <PostsManager />}
+
+        {view === "pages" && <PagesManager />}
 
         {view === "domain" && <DomainSettings />}
 

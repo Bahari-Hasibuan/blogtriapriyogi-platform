@@ -185,7 +185,7 @@ function renderContent(value: string) {
 
         if (!embedUrl) return `<p>${escapeHtml(rawLine)}</p>`;
 
-        return `<div class="embed-video"><iframe src="${escapeAttr(embedUrl)}" title="Video artikel" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+        return `<div class="embed-video"><iframe src="${escapeAttr(embedUrl)}" title="Video halaman" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
       const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
@@ -194,7 +194,7 @@ function renderContent(value: string) {
         const currentIndex = imageIndex;
         imageIndex += 1;
 
-        const alt = imageMatch[1] || "Gambar artikel";
+        const alt = imageMatch[1] || "Gambar halaman";
         const src = imageMatch[2] || "";
         const meta = parseImageMeta(imageMatch[3]);
         const caption = meta.caption || alt;
@@ -234,7 +234,7 @@ function contentToFriendlyText(value: string) {
       if (imageMatch) {
         imageNumber += 1;
         const meta = parseImageMeta(imageMatch[3]);
-        const caption = meta.caption || imageMatch[1] || "Gambar artikel";
+        const caption = meta.caption || imageMatch[1] || "Gambar halaman";
         return `[[GAMBAR ${imageNumber}: ${caption}]]`;
       }
 
@@ -292,7 +292,7 @@ function htmlToArticleContent(html: string) {
   next = next.replace(
     /<img[^>]*src="([^"]+)"[^>]*alt="([^"]*)"[^>]*>/gi,
     (_match, src, alt) => {
-      const cleanAlt = cleanMetaValue(alt || "Gambar artikel");
+      const cleanAlt = cleanMetaValue(alt || "Gambar halaman");
       return `\n\n![${cleanAlt}](${src}){size=large;align=center;aspect=original;caption=${cleanAlt};link=}\n\n`;
     }
   );
@@ -316,7 +316,7 @@ function htmlToArticleContent(html: string) {
   return next.trim();
 }
 
-export default function PostEditor() {
+export default function PageEditor() {
   const router = useRouter();
   const textRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -332,7 +332,7 @@ export default function PostEditor() {
 
   const [tab, setTab] = useState<Tab>("write");
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("artikel-baru");
+  const [slug, setSlug] = useState("halaman-baru");
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
@@ -362,9 +362,9 @@ export default function PostEditor() {
   const articleImages = useMemo(() => parseArticleImages(content), [content]);
 
   const publicUrl = useMemo(() => {
-    const activeSlug = makeSlug(slug || title || "artikel-baru");
+    const activeSlug = makeSlug(slug || title || "halaman-baru");
     const activeSite = blogSlug || "nama-anda";
-    return `https://${activeSite}.triapriyogi.com/${activeSlug}.html`;
+    return `https://${activeSite}.triapriyogi.com/${activeSlug}`;
   }, [blogSlug, slug, title]);
 
   function articleStateToJson() {
@@ -413,7 +413,7 @@ export default function PostEditor() {
   function applyCodeDraft() {
     setContent(codeDraft);
     setEditorMode("visual");
-    setMessage("Kode artikel berhasil diterapkan.");
+    setMessage("Kode halaman berhasil diterapkan.");
   }
 
   function applyHtmlDraft() {
@@ -483,7 +483,7 @@ export default function PostEditor() {
         if (post.data) {
           setPostId(post.data.id);
           setTitle(post.data.title || "");
-          setSlug(post.data.slug || "artikel-baru");
+          setSlug(post.data.slug || "halaman-baru");
           setExcerpt(post.data.excerpt || "");
           setContent(post.data.content || "");
           setSeoTitle(post.data.seo_title || "");
@@ -500,8 +500,8 @@ export default function PostEditor() {
   function updateTitle(value: string) {
     setTitle(value);
 
-    if (!postId && (!slug || slug === "artikel-baru")) {
-      setSlug(makeSlug(value) || "artikel-baru");
+    if (!postId && (!slug || slug === "halaman-baru")) {
+      setSlug(makeSlug(value) || "halaman-baru");
     }
   }
 
@@ -659,7 +659,7 @@ export default function PostEditor() {
       .getPublicUrl(path).data.publicUrl;
 
     insertText(
-      `\n\n![${safeName || "Gambar artikel"}](${publicUrl}){size=${defaultImageSize};align=center;aspect=${defaultImageAspect};caption=${safeName || "Gambar artikel"};link=}\n\n`
+      `\n\n![${safeName || "Gambar halaman"}](${publicUrl}){size=${defaultImageSize};align=center;aspect=${defaultImageAspect};caption=${safeName || "Gambar halaman"};link=}\n\n`
     );
 
     setSaving(false);
@@ -709,7 +709,7 @@ export default function PostEditor() {
     }
 
     const lines = content.split("\n");
-    const alt = cleanMetaValue(selectedImageAlt || "Gambar artikel");
+    const alt = cleanMetaValue(selectedImageAlt || "Gambar halaman");
     const caption = cleanMetaValue(selectedImageCaption);
     const link = cleanMetaValue(selectedImageLink);
 
@@ -726,7 +726,7 @@ export default function PostEditor() {
   }
 
   function generateDraft() {
-    const activeTitle = title.trim() || "Judul artikel Anda";
+    const activeTitle = title.trim() || "Judul halaman Anda";
 
     const template = `## Pembuka
 
@@ -770,9 +770,9 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
     }
 
     const cleanTitle = title.trim() || "Untitled";
-    let cleanSlug = makeSlug(slug || cleanTitle || "artikel-baru");
+    let cleanSlug = makeSlug(slug || cleanTitle || "halaman-baru");
 
-    if (!cleanSlug) cleanSlug = "artikel-baru";
+    if (!cleanSlug) cleanSlug = "halaman-baru";
 
     setSaving(true);
     setMessage("");
@@ -795,7 +795,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
 
     const payload = {
       user_id: data.user.id,
-      content_type: "post",
+      content_type: "page",
       title: cleanTitle,
       slug: cleanSlug,
       excerpt: excerpt.trim(),
@@ -817,7 +817,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         .single();
 
       if (result.error) {
-        setMessage(`Gagal menyimpan artikel: ${result.error.message}`);
+        setMessage(`Gagal menyimpan halaman: ${result.error.message}`);
         setSaving(false);
         return;
       }
@@ -829,21 +829,21 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         .single();
 
       if (result.error) {
-        setMessage(`Gagal membuat artikel baru: ${result.error.message}`);
+        setMessage(`Gagal membuat halaman baru: ${result.error.message}`);
         setSaving(false);
         return;
       }
 
       setPostId(result.data.id);
-      router.replace(`/editor?id=${result.data.id}`);
+      router.replace(`/page-editor?id=${result.data.id}`);
     }
 
     setSlug(cleanSlug);
     setSaving(false);
     setMessage(
       nextStatus === "published"
-        ? "Artikel berhasil dipublikasikan."
-        : "Draft berhasil disimpan."
+        ? "Halaman berhasil dipublikasikan."
+        : "Draft halaman berhasil disimpan."
     );
   }
 
@@ -863,7 +863,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         </button>
 
         <div>
-          <b>Editor post</b>
+          <b>Editor halaman</b>
           <span>{email}</span>
         </div>
 
@@ -898,13 +898,13 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 className="editor-title"
                 value={title}
                 onChange={(e) => updateTitle(e.target.value)}
-                placeholder="Judul artikel..."
+                placeholder="Judul halaman..."
               />
 
               <div className="editor-meta">
                 <span>{wordCount} kata</span>
                 <span>{readTime} menit baca</span>
-                <span>Slug: /{makeSlug(slug || title || "artikel-baru")}</span>
+                <span>Slug: /{makeSlug(slug || title || "halaman-baru")}</span>
               </div>
 
               <div className="editor-toolbar">
@@ -1014,9 +1014,9 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                     }
                   }}
                 >
-                  <small>Tampilan artikel</small>
+                  <small>Tampilan halaman</small>
                   <h1>{title || "Judul artikel"}</h1>
-                  <p>{excerpt || "Ringkasan artikel akan tampil di sini."}</p>
+                  <p>{excerpt || "Ringkasan halaman akan tampil di sini."}</p>
 
                   {content.trim() ? (
                     <div dangerouslySetInnerHTML={{ __html: renderContent(content) }} />
@@ -1032,7 +1032,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <section className="editor-source-draft clean-text-editor">
                   <div className="source-head">
                     <div>
-                      <b>Teks artikel</b>
+                      <b>Teks halaman</b>
                       <span>Mode nyaman untuk menulis. Gambar disimpan sebagai kartu, URL tidak ditampilkan.</span>
                     </div>
                     <button type="button" onClick={applyTextDraft}>
@@ -1074,7 +1074,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                     className="editor-body code-mode"
                     value={codeDraft}
                     onChange={(e) => setCodeDraft(e.target.value)}
-                    placeholder="Kode sumber artikel akan tampil di sini."
+                    placeholder="Kode sumber halaman akan tampil di sini."
                   />
                 </section>
               )}
@@ -1095,7 +1095,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                     className="editor-body code-mode"
                     value={htmlDraft}
                     onChange={(e) => setHtmlDraft(e.target.value)}
-                    placeholder="<h2>Subjudul</h2><p>Isi artikel...</p>"
+                    placeholder="<h2>Subjudul</h2><p>Isi halaman...</p>"
                   />
                 </section>
               )}
@@ -1116,7 +1116,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                     className="editor-body code-mode"
                     value={jsonDraft}
                     onChange={(e) => setJsonDraft(e.target.value)}
-                    placeholder='{"title":"Judul artikel","content":"Isi artikel"}'
+                    placeholder='{"title":"Judul artikel","content":"Isi halaman"}'
                   />
                 </section>
               )}
@@ -1131,16 +1131,16 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <input
                   value={slug}
                   onChange={(e) => setSlug(makeSlug(e.target.value))}
-                  placeholder="artikel-baru"
+                  placeholder="halaman-baru"
                 />
               </label>
 
               <label>
-                Ringkasan artikel
+                Ringkasan halaman
                 <textarea
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
-                  placeholder="Tulis ringkasan pendek untuk artikel ini."
+                  placeholder="Tulis ringkasan pendek untuk halaman ini."
                 />
               </label>
 
@@ -1158,7 +1158,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <textarea
                   value={seoDescription}
                   onChange={(e) => setSeoDescription(e.target.value)}
-                  placeholder="Deskripsi singkat untuk mesin pencari."
+                  placeholder="Deskripsi singkat halaman untuk mesin pencari."
                 />
               </label>
             </div>
@@ -1182,7 +1182,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
             >
               <small>{blogName}</small>
               <h1>{title || "Judul artikel"}</h1>
-              <p>{excerpt || "Ringkasan artikel akan tampil di sini."}</p>
+              <p>{excerpt || "Ringkasan halaman akan tampil di sini."}</p>
               <div dangerouslySetInnerHTML={{ __html: renderContent(content) }} />
             </article>
           )}
@@ -1208,7 +1208,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                   >
                     <img src={image.src} alt={image.alt || "Gambar"} />
                     <span>
-                      <b>{image.alt || "Gambar artikel"}</b>
+                      <b>{image.alt || "Gambar halaman"}</b>
                       <small>
                         {image.size} · {image.aspect}
                       </small>
@@ -1302,7 +1302,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
               💾 Simpan draft
             </button>
             <button className="publish" onClick={() => savePost("published")} disabled={saving}>
-              ✈ Publikasikan artikel
+              ✈ Publikasikan halaman
             </button>
           </div>
 
@@ -1318,7 +1318,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
             </div>
 
             <div className={content.trim().length > 120 ? "ok" : "warn"}>
-              Isi artikel {content.trim().length > 120 ? "cukup" : "masih pendek"}
+              Isi halaman {content.trim().length > 120 ? "cukup" : "masih pendek"}
             </div>
 
             <div className={seoTitle.trim() && seoDescription.trim() ? "ok" : "warn"}>
@@ -1339,7 +1339,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
             <p>Detail URL</p>
             <b>{publicUrl}</b>
             <a href={publicUrl} target="_blank">
-              Buka artikel publik
+              Buka halaman publik
             </a>
           </div>
         </aside>

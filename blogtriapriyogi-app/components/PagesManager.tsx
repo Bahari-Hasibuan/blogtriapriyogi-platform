@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type PostItem = {
+type PageItem = {
   id: string;
   title: string;
   slug: string | null;
@@ -14,17 +14,17 @@ type PostItem = {
   published_at: string | null;
 };
 
-export default function PostsManager() {
-  const [posts, setPosts] = useState<PostItem[]>([]);
+export default function PagesManager() {
+  const [pages, setPages] = useState<PageItem[]>([]);
   const [blogSlug, setBlogSlug] = useState("");
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    loadPosts();
+    loadPages();
   }, []);
 
-  async function loadPosts() {
+  async function loadPages() {
     const { data } = await supabase.auth.getUser();
 
     if (!data.user) {
@@ -44,42 +44,42 @@ export default function PostsManager() {
       .from("posts")
       .select("id,title,slug,status,excerpt,created_at,updated_at,published_at")
       .eq("user_id", data.user.id)
-      .eq("content_type", "post")
+      .eq("content_type", "page")
       .neq("status", "archived")
       .order("updated_at", { ascending: false });
 
     if (result.data) {
-      setPosts(result.data as PostItem[]);
+      setPages(result.data as PageItem[]);
     }
 
     setLoading(false);
   }
 
-  async function archivePost(id: string) {
+  async function archivePage(id: string) {
     const result = await supabase
       .from("posts")
       .update({ status: "archived", updated_at: new Date().toISOString() })
       .eq("id", id);
 
     if (result.error) {
-      setNotice("Gagal mengarsipkan artikel.");
+      setNotice("Gagal mengarsipkan halaman.");
       return;
     }
 
-    setNotice("Artikel dipindahkan ke arsip.");
-    await loadPosts();
+    setNotice("Halaman dipindahkan ke arsip.");
+    await loadPages();
   }
 
   return (
     <section className="dash-content">
       <div className="dash-title">
         <div>
-          <p>Postingan</p>
-          <h1>Kelola artikel</h1>
-          <span>Tulis, simpan draft, edit, dan publikasikan artikel ke halaman publik.</span>
+          <p>Halaman</p>
+          <h1>Kelola halaman website</h1>
+          <span>Buat halaman seperti Tentang, Kontak, Layanan, Produk, Profil, dan halaman statis lainnya.</span>
         </div>
 
-        <a className="post-new-button" href="/editor">+ Buat artikel</a>
+        <a className="post-new-button" href="/page-editor">+ Buat halaman</a>
       </div>
 
       {notice && <div className="domain-notice">{notice}</div>}
@@ -87,48 +87,48 @@ export default function PostsManager() {
       <article className="dash-panel">
         <div className="dash-panel-head">
           <div>
-            <p>Artikel</p>
-            <h2>Semua postingan</h2>
+            <p>Website pages</p>
+            <h2>Semua halaman</h2>
           </div>
         </div>
 
         {loading ? (
           <div className="dash-empty">
-            <b>Memuat artikel...</b>
+            <b>Memuat halaman...</b>
           </div>
-        ) : posts.length === 0 ? (
+        ) : pages.length === 0 ? (
           <div className="dash-empty">
-            <b>Belum ada artikel.</b>
-            <small>Buat artikel pertama dari tombol Buat artikel.</small>
-            <a className="post-empty-action" href="/editor">Mulai menulis</a>
+            <b>Belum ada halaman.</b>
+            <small>Buat halaman pertama seperti Tentang, Kontak, Layanan, atau Produk.</small>
+            <a className="post-empty-action" href="/page-editor">Mulai buat halaman</a>
           </div>
         ) : (
           <div className="post-list">
-            {posts.map((post) => {
+            {pages.map((page) => {
               const publicUrl =
-                post.status === "published" && post.slug && blogSlug
-                  ? `https://${blogSlug}.triapriyogi.com/${post.slug}.html`
+                page.status === "published" && page.slug && blogSlug
+                  ? `https://${blogSlug}.triapriyogi.com/${page.slug}`
                   : "";
 
               return (
-                <div key={post.id} className="post-row">
+                <div key={page.id} className="post-row">
                   <div>
-                    <b>{post.title}</b>
-                    <small>{post.excerpt || "Belum ada ringkasan artikel."}</small>
+                    <b>{page.title}</b>
+                    <small>{page.excerpt || "Belum ada ringkasan halaman."}</small>
                     <span>
-                      {post.status === "published" ? "Dipublikasikan" : "Draft"} ·{" "}
-                      {post.slug || "belum-ada-slug"}
+                      {page.status === "published" ? "Dipublikasikan" : "Draft"} ·{" "}
+                      /{page.slug || "halaman-baru"}
                     </span>
                   </div>
 
-                  <strong className={post.status === "published" ? "published" : "draft"}>
-                    {post.status === "published" ? "Published" : "Draft"}
+                  <strong className={page.status === "published" ? "published" : "draft"}>
+                    {page.status === "published" ? "Published" : "Draft"}
                   </strong>
 
                   <div className="post-actions">
-                    <a href={`/editor?id=${post.id}`}>Edit</a>
+                    <a href={`/page-editor?id=${page.id}`}>Edit</a>
                     {publicUrl && <a href={publicUrl} target="_blank">Buka</a>}
-                    <button onClick={() => archivePost(post.id)}>Arsip</button>
+                    <button onClick={() => archivePage(page.id)}>Arsip</button>
                   </div>
                 </div>
               );
