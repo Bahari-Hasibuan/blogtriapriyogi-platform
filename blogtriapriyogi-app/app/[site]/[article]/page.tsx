@@ -23,7 +23,7 @@ function escapeAttr(value: string) {
   return escapeHtml(value).replaceAll('"', "&quot;");
 }
 
-function getYouTubeId(value: string) {
+function getVideoEmbedUrl(value: string) {
   const input = String(value || "").trim();
 
   const patterns = [
@@ -35,7 +35,13 @@ function getYouTubeId(value: string) {
 
   for (const pattern of patterns) {
     const match = input.match(pattern);
-    if (match?.[1]) return match[1];
+    if (match?.[1]) {
+      return `https://www.youtube.com/embed/${encodeURIComponent(match[1])}`;
+    }
+  }
+
+  if (input.includes("/embed/") && input.startsWith("https://")) {
+    return input;
   }
 
   return "";
@@ -72,18 +78,13 @@ function parseImageMeta(raw?: string) {
 
     if (
       cleanKey === "aspect" &&
-      ["original", "youtube", "instagram-square", "instagram-feed", "story", "facebook"].includes(cleanValue)
+      ["original", "landscape", "square", "portrait", "feed", "banner"].includes(cleanValue)
     ) {
       meta.aspect = cleanValue;
     }
 
-    if (cleanKey === "caption") {
-      meta.caption = cleanValue;
-    }
-
-    if (cleanKey === "link") {
-      meta.link = cleanValue;
-    }
+    if (cleanKey === "caption") meta.caption = cleanValue;
+    if (cleanKey === "link") meta.link = cleanValue;
   });
 
   return meta;
@@ -91,20 +92,17 @@ function parseImageMeta(raw?: string) {
 
 function renderContent(value: string) {
   return String(value || "")
-    .split("
-")
+    .split("\n")
     .map((rawLine) => {
       const line = rawLine.trim();
 
-      if (line.startsWith("@youtube ")) {
-        const url = line.replace("@youtube ", "").trim();
-        const id = getYouTubeId(url);
+      if (line.startsWith("@video ")) {
+        const url = line.replace("@video ", "").trim();
+        const embedUrl = getVideoEmbedUrl(url);
 
-        if (!id) {
-          return `<p>${escapeHtml(rawLine)}</p>`;
-        }
+        if (!embedUrl) return `<p>${escapeHtml(rawLine)}</p>`;
 
-        return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+        return `<div class="embed-video"><iframe src="${escapeAttr(embedUrl)}" title="Video artikel" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
       const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
@@ -114,7 +112,9 @@ function renderContent(value: string) {
         const src = imageMatch[2] || "";
         const meta = parseImageMeta(imageMatch[3]);
         const caption = meta.caption || alt;
+
         const imageHtml = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" />`;
+
         const linkedImage = meta.link
           ? `<a href="${escapeAttr(meta.link)}" target="_blank" rel="noopener noreferrer">${imageHtml}</a>`
           : imageHtml;

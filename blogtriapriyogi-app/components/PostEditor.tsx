@@ -5,6 +5,27 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 type Tab = "write" | "settings" | "preview";
+type ImageSize = "medium" | "large" | "xlarge" | "full";
+type ImageAlign = "left" | "center" | "right";
+type ImageAspect =
+  | "original"
+  | "landscape"
+  | "square"
+  | "portrait"
+  | "feed"
+  | "banner";
+
+type ArticleImage = {
+  imageIndex: number;
+  lineIndex: number;
+  alt: string;
+  src: string;
+  caption: string;
+  link: string;
+  size: ImageSize;
+  align: ImageAlign;
+  aspect: ImageAspect;
+};
 
 function makeSlug(value: string) {
   return value
@@ -13,7 +34,7 @@ function makeSlug(value: string) {
     .replace(/['"]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+    .slice(0, 90);
 }
 
 function escapeHtml(value: string) {
@@ -27,7 +48,16 @@ function escapeAttr(value: string) {
   return escapeHtml(value).replaceAll('"', "&quot;");
 }
 
-function getYouTubeId(value: string) {
+function cleanMetaValue(value: string) {
+  return String(value || "")
+    .replaceAll("{", "")
+    .replaceAll("}", "")
+    .replaceAll(";", ",")
+    .replaceAll("\n", " ")
+    .trim();
+}
+
+function getVideoEmbedUrl(value: string) {
   const input = String(value || "").trim();
 
   const patterns = [
@@ -39,27 +69,17 @@ function getYouTubeId(value: string) {
 
   for (const pattern of patterns) {
     const match = input.match(pattern);
-    if (match?.[1]) return match[1];
+    if (match?.[1]) {
+      return `https://www.youtube.com/embed/${encodeURIComponent(match[1])}`;
+    }
+  }
+
+  if (input.includes("/embed/") && input.startsWith("https://")) {
+    return input;
   }
 
   return "";
 }
-
-type ImageSize = "medium" | "large" | "xlarge" | "full";
-type ImageAlign = "left" | "center" | "right";
-type ImageAspect = "original" | "youtube" | "instagram-square" | "instagram-feed" | "story" | "facebook";
-
-type ArticleImage = {
-  imageIndex: number;
-  lineIndex: number;
-  alt: string;
-  src: string;
-  caption: string;
-  link: string;
-  size: ImageSize;
-  align: ImageAlign;
-  aspect: ImageAspect;
-};
 
 function parseImageMeta(raw?: string) {
   const meta = {
@@ -92,42 +112,29 @@ function parseImageMeta(raw?: string) {
 
     if (
       cleanKey === "aspect" &&
-      ["original", "youtube", "instagram-square", "instagram-feed", "story", "facebook"].includes(cleanValue)
+      ["original", "landscape", "square", "portrait", "feed", "banner"].includes(cleanValue)
     ) {
       meta.aspect = cleanValue as ImageAspect;
     }
 
-    if (cleanKey === "caption") {
-      meta.caption = cleanValue;
-    }
-
-    if (cleanKey === "link") {
-      meta.link = cleanValue;
-    }
+    if (cleanKey === "caption") meta.caption = cleanValue;
+    if (cleanKey === "link") meta.link = cleanValue;
   });
 
   return meta;
 }
 
-function cleanMetaValue(value: string) {
-  return String(value || "")
-    .replaceAll("{", "")
-    .replaceAll("}", "")
-    .replaceAll(";", ",")
-    .trim();
-}
-
 function imageMetaToString(data: {
   size: ImageSize;
   align: ImageAlign;
-  aspect?: ImageAspect;
+  aspect: ImageAspect;
   caption?: string;
   link?: string;
 }) {
   return [
     `size=${data.size}`,
     `align=${data.align}`,
-    `aspect=${data.aspect || "original"}`,
+    `aspect=${data.aspect}`,
     `caption=${cleanMetaValue(data.caption || "")}`,
     `link=${cleanMetaValue(data.link || "")}`,
   ].join(";");
@@ -137,14 +144,14 @@ function parseArticleImages(value: string): ArticleImage[] {
   let imageIndex = 0;
 
   return String(value || "")
-    .split("
-")
+    .split("\n")
     .map((line, lineIndex) => {
       const match = line.trim().match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
 
       if (!match) return null;
 
       const meta = parseImageMeta(match[3]);
+
       const item: ArticleImage = {
         imageIndex,
         lineIndex,
@@ -167,20 +174,17 @@ function renderContent(value: string) {
   let imageIndex = 0;
 
   return String(value || "")
-    .split("
-")
+    .split("\n")
     .map((rawLine) => {
       const line = rawLine.trim();
 
-      if (line.startsWith("@youtube ")) {
-        const url = line.replace("@youtube ", "").trim();
-        const id = getYouTubeId(url);
+      if (line.startsWith("@video ")) {
+        const url = line.replace("@video ", "").trim();
+        const embedUrl = getVideoEmbedUrl(url);
 
-        if (!id) {
-          return `<p>${escapeHtml(rawLine)}</p>`;
-        }
+        if (!embedUrl) return `<p>${escapeHtml(rawLine)}</p>`;
 
-        return `<div class="embed-video"><iframe src="https://www.youtube.com/embed/${escapeAttr(id)}" title="YouTube video" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+        return `<div class="embed-video"><iframe src="${escapeAttr(embedUrl)}" title="Video artikel" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
       }
 
       const imageMatch = line.match(/^!\[(.*?)\]\((.*?)\)(?:\{(.*?)\})?$/);
@@ -193,7 +197,9 @@ function renderContent(value: string) {
         const src = imageMatch[2] || "";
         const meta = parseImageMeta(imageMatch[3]);
         const caption = meta.caption || alt;
+
         const imageHtml = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" />`;
+
         const linkedImage = meta.link
           ? `<a href="${escapeAttr(meta.link)}" target="_blank" rel="noopener noreferrer">${imageHtml}</a>`
           : imageHtml;
@@ -234,15 +240,23 @@ export default function PostEditor() {
   const [content, setContent] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
-  const [imageSize, setImageSize] = useState<ImageSize>("large");
-  const [imageAspect, setImageAspect] = useState<ImageAspect>("original");
+
+  const [defaultImageSize, setDefaultImageSize] = useState<ImageSize>("large");
+  const [defaultImageAspect, setDefaultImageAspect] = useState<ImageAspect>("original");
+
+  const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
+  const [selectedImageAlt, setSelectedImageAlt] = useState("");
+  const [selectedImageCaption, setSelectedImageCaption] = useState("");
+  const [selectedImageLink, setSelectedImageLink] = useState("");
+  const [selectedImageSize, setSelectedImageSize] = useState<ImageSize>("large");
+  const [selectedImageAlign, setSelectedImageAlign] = useState<ImageAlign>("center");
+  const [selectedImageAspect, setSelectedImageAspect] = useState<ImageAspect>("original");
 
   const wordCount = useMemo(() => {
     return content.trim() ? content.trim().split(/\s+/).length : 0;
   }, [content]);
 
   const readTime = Math.max(1, Math.ceil(wordCount / 200));
-
   const articleImages = useMemo(() => parseArticleImages(content), [content]);
 
   const publicUrl = useMemo(() => {
@@ -309,6 +323,7 @@ export default function PostEditor() {
 
   function updateTitle(value: string) {
     setTitle(value);
+
     if (!postId && (!slug || slug === "artikel-baru")) {
       setSlug(makeSlug(value) || "artikel-baru");
     }
@@ -325,6 +340,7 @@ export default function PostEditor() {
     const start = el.selectionStart;
     const end = el.selectionEnd;
     const selected = content.slice(start, end);
+
     const next =
       content.slice(0, start) +
       before +
@@ -340,8 +356,6 @@ export default function PostEditor() {
       el.setSelectionRange(cursor, cursor);
     }, 0);
   }
-
-
 
   async function compressImageToWebP(file: File) {
     const image = new Image();
@@ -384,7 +398,7 @@ export default function PostEditor() {
     });
 
     if (!blob) {
-      throw new Error("Gagal mengubah gambar ke WebP.");
+      throw new Error("Gagal mengubah gambar.");
     }
 
     return new File(
@@ -394,55 +408,16 @@ export default function PostEditor() {
     );
   }
 
-
-
-  function selectImageForEditing(index: number) {
-    const image = articleImages.find((item) => item.imageIndex === index);
-
-    if (!image) return;
-
-    setSelectedImageIndex(index);
-    setSelectedImageAlt(image.alt);
-    setSelectedImageCaption(image.caption);
-    setSelectedImageLink(image.link);
-    setSelectedImageSize(image.size);
-    setSelectedImageAlign(image.align);
-    setSelectedImageAspect(image.aspect);
-    setTab("preview");
-    setMessage("Gambar dipilih. Atur detailnya di panel kanan.");
-  }
-
-  function applyImageSettings() {
-    const image = articleImages.find((item) => item.imageIndex === selectedImageIndex);
-
-    if (!image) {
-      setMessage("Pilih gambar terlebih dahulu.");
-      return;
-    }
-
-    const lines = content.split("\n");
-    const alt = cleanMetaValue(selectedImageAlt || "Gambar artikel");
-    const caption = cleanMetaValue(selectedImageCaption);
-    const link = cleanMetaValue(selectedImageLink);
-
-    lines[image.lineIndex] = `![${alt}](${image.src}){${imageMetaToString({
-      size: selectedImageSize,
-      align: selectedImageAlign,
-      aspect: selectedImageAspect,
-      caption,
-      link,
-    })}}`;
-
-    setContent(lines.join("\n"));
-    setMessage("Pengaturan gambar berhasil diterapkan.");
-  }
-
-
   async function uploadImage(file: File) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       setMessage("File harus berupa gambar.");
+      return;
+    }
+
+    if (file.type.includes("svg")) {
+      setMessage("Format ini belum diaktifkan untuk keamanan. Gunakan JPG, PNG, WebP, atau GIF.");
       return;
     }
 
@@ -474,7 +449,7 @@ export default function PostEditor() {
 
     if (optimizedFile.size > 2 * 1024 * 1024) {
       setSaving(false);
-      setMessage("Gambar masih terlalu besar setelah dikompres. Gunakan gambar yang lebih ringan.");
+      setMessage("Gambar masih terlalu besar setelah dikompres.");
       return;
     }
 
@@ -485,7 +460,7 @@ export default function PostEditor() {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
-      .slice(0, 40);
+      .slice(0, 42);
 
     const path = `${data.user.id}/${Date.now()}-${safeName || "gambar"}.webp`;
 
@@ -507,29 +482,75 @@ export default function PostEditor() {
       .from("article-media")
       .getPublicUrl(path).data.publicUrl;
 
-    insertText(`\n\n![${safeName || "Gambar artikel"}](${publicUrl}){size=${imageSize};align=center;aspect=${imageAspect};caption=${safeName || "Gambar artikel"};link=}\n\n`);
+    insertText(
+      `\n\n![${safeName || "Gambar artikel"}](${publicUrl}){size=${defaultImageSize};align=center;aspect=${defaultImageAspect};caption=${safeName || "Gambar artikel"};link=}\n\n`
+    );
 
     setSaving(false);
-    setMessage(`Gambar berhasil dikompres dan dimasukkan. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
+    setTab("preview");
+    setMessage(`Gambar berhasil masuk. Ukuran akhir: ${Math.round(optimizedFile.size / 1024)} KB.`);
   }
 
-  function insertYouTubeVideo() {
-    const url = window.prompt("Masukkan link YouTube:");
+  function insertVideoEmbed() {
+    const url = window.prompt("Masukkan link video embed:");
 
     if (!url) return;
 
-    if (!url.includes("youtube.com") && !url.includes("youtu.be")) {
-      setMessage("Link YouTube belum valid.");
+    const embedUrl = getVideoEmbedUrl(url);
+
+    if (!embedUrl) {
+      setMessage("Link video belum valid.");
       return;
     }
 
-    insertText(`\n\n@youtube ${url.trim()}\n\n`);
-    setMessage("Video YouTube berhasil dimasukkan.");
+    insertText(`\n\n@video ${url.trim()}\n\n`);
+    setMessage("Video berhasil dimasukkan.");
   }
 
+  function selectImageForEditing(index: number) {
+    const image = articleImages.find((item) => item.imageIndex === index);
+
+    if (!image) return;
+
+    setSelectedImageIndex(index);
+    setSelectedImageAlt(image.alt);
+    setSelectedImageCaption(image.caption);
+    setSelectedImageLink(image.link);
+    setSelectedImageSize(image.size);
+    setSelectedImageAlign(image.align);
+    setSelectedImageAspect(image.aspect);
+    setTab("preview");
+    setMessage("Gambar dipilih. Atur detail gambar di panel kanan.");
+  }
+
+  function applyImageSettings() {
+    const image = articleImages.find((item) => item.imageIndex === selectedImageIndex);
+
+    if (!image) {
+      setMessage("Pilih gambar terlebih dahulu.");
+      return;
+    }
+
+    const lines = content.split("\n");
+    const alt = cleanMetaValue(selectedImageAlt || "Gambar artikel");
+    const caption = cleanMetaValue(selectedImageCaption);
+    const link = cleanMetaValue(selectedImageLink);
+
+    lines[image.lineIndex] = `![${alt}](${image.src}){${imageMetaToString({
+      size: selectedImageSize,
+      align: selectedImageAlign,
+      aspect: selectedImageAspect,
+      caption,
+      link,
+    })}}`;
+
+    setContent(lines.join("\n"));
+    setMessage("Pengaturan gambar berhasil diterapkan.");
+  }
 
   function generateDraft() {
     const activeTitle = title.trim() || "Judul artikel Anda";
+
     const template = `## Pembuka
 
 Tuliskan pembuka yang menjelaskan masalah utama pembaca dan alasan artikel ini penting.
@@ -618,7 +639,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         .single();
 
       if (result.error) {
-        setMessage("Gagal menyimpan artikel.");
+        setMessage(`Gagal menyimpan artikel: ${result.error.message}`);
         setSaving(false);
         return;
       }
@@ -630,7 +651,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         .single();
 
       if (result.error) {
-        setMessage("Gagal membuat artikel baru.");
+        setMessage(`Gagal membuat artikel baru: ${result.error.message}`);
         setSaving(false);
         return;
       }
@@ -659,7 +680,9 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
   return (
     <main className="editor-shell">
       <header className="editor-topbar">
-        <button className="editor-menu" onClick={() => router.push("/")}>☰</button>
+        <button className="editor-menu" onClick={() => router.push("/")}>
+          ☰
+        </button>
 
         <div>
           <b>Editor post</b>
@@ -667,7 +690,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         </div>
 
         <div className="editor-actions">
-          <button onClick={generateDraft}>✦ AI Assistant</button>
+          <button onClick={generateDraft}>✦ Asisten tulisan</button>
           <button onClick={() => savePost("draft")} disabled={saving}>
             💾 Simpan draft
           </button>
@@ -714,39 +737,43 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <button onClick={() => insertText("[teks link](https://contoh.com)")}>🔗</button>
                 <button onClick={() => insertText("\n- ")}>☷</button>
                 <button onClick={() => insertText("\n> ")}>❝</button>
+
                 <select
                   className="editor-image-size"
-                  value={imageSize}
-                  onChange={(e) => setImageSize(e.target.value as ImageSize)}
+                  value={defaultImageSize}
+                  onChange={(e) => setDefaultImageSize(e.target.value as ImageSize)}
                   title="Ukuran gambar"
                 >
-                  <option value="medium">Gambar sedang</option>
-                  <option value="large">Gambar besar</option>
-                  <option value="xlarge">Gambar extra besar</option>
-                  <option value="full">Gambar full lebar</option>
+                  <option value="medium">Sedang</option>
+                  <option value="large">Besar</option>
+                  <option value="xlarge">Extra besar</option>
+                  <option value="full">Full lebar</option>
                 </select>
+
                 <select
                   className="editor-image-aspect"
-                  value={imageAspect}
-                  onChange={(e) => setImageAspect(e.target.value as ImageAspect)}
+                  value={defaultImageAspect}
+                  onChange={(e) => setDefaultImageAspect(e.target.value as ImageAspect)}
                   title="Bentuk gambar"
                 >
                   <option value="original">Original</option>
-                  <option value="youtube">YouTube 16:9</option>
-                  <option value="instagram-square">Instagram 1:1</option>
-                  <option value="instagram-feed">Instagram 4:5</option>
-                  <option value="story">TikTok/Reels 9:16</option>
-                  <option value="facebook">Facebook 1.91:1</option>
+                  <option value="landscape">Lanskap 16:9</option>
+                  <option value="square">Kotak 1:1</option>
+                  <option value="feed">Feed 4:5</option>
+                  <option value="portrait">Potret 9:16</option>
+                  <option value="banner">Banner 1.91:1</option>
                 </select>
+
                 <button onClick={() => fileRef.current?.click()}>▧ Gambar</button>
-                <button onClick={insertYouTubeVideo}>▶ YouTube</button>
-                <button className="ai" onClick={generateDraft}>✦ Generate AI</button>
+                <button onClick={insertVideoEmbed}>▶ Video</button>
+                <button onClick={() => setTab("preview")}>⚙️ Atur</button>
+                <button className="ai" onClick={generateDraft}>✦ Draft cepat</button>
               </div>
 
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 hidden
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -760,7 +787,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 className="editor-body"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Mulai tulis artikel Anda di sini... Contoh: ## Subjudul tulis isi artikel dengan gaya rapi, informatif, dan mudah dibaca."
+                placeholder="Mulai tulis artikel Anda di sini..."
               />
             </>
           )}
@@ -799,7 +826,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 <textarea
                   value={seoDescription}
                   onChange={(e) => setSeoDescription(e.target.value)}
-                  placeholder="Deskripsi singkat untuk Google, Bing, dan mesin pencari lain."
+                  placeholder="Deskripsi singkat untuk mesin pencari."
                 />
               </label>
             </div>
@@ -832,20 +859,12 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
         <aside className="editor-side">
           {message && <div className="editor-message">{message}</div>}
 
-          <div className="editor-panel">
-            <p>Publikasi</p>
-            <button onClick={() => savePost("draft")} disabled={saving}>💾 Simpan draft</button>
-            <button className="publish" onClick={() => savePost("published")} disabled={saving}>
-              ✈ Publikasikan artikel
-            </button>
-          </div>
-
           <div className="editor-panel image-tools-panel">
-            <p>Gambar artikel</p>
+            <p>Pengaturan gambar</p>
 
             {articleImages.length === 0 ? (
               <span className="image-tools-empty">
-                Belum ada gambar. Upload gambar dari tombol Gambar di toolbar.
+                Belum ada gambar. Klik tombol Gambar di toolbar untuk upload.
               </span>
             ) : (
               <div className="image-list">
@@ -858,7 +877,9 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                     <img src={image.src} alt={image.alt || "Gambar"} />
                     <span>
                       <b>{image.alt || "Gambar artikel"}</b>
-                      <small>{image.size} · {image.align}</small>
+                      <small>
+                        {image.size} · {image.aspect}
+                      </small>
                     </span>
                   </button>
                 ))}
@@ -881,7 +902,7 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                   <input
                     value={selectedImageAlt}
                     onChange={(e) => setSelectedImageAlt(e.target.value)}
-                    placeholder="Deskripsi gambar untuk SEO"
+                    placeholder="Deskripsi gambar untuk aksesibilitas"
                   />
                 </label>
 
@@ -927,41 +948,67 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                       onChange={(e) => setSelectedImageAspect(e.target.value as ImageAspect)}
                     >
                       <option value="original">Original</option>
-                      <option value="youtube">YouTube 16:9</option>
-                      <option value="instagram-square">Instagram kotak 1:1</option>
-                      <option value="instagram-feed">Instagram feed 4:5</option>
-                      <option value="story">TikTok/Reels/Story 9:16</option>
-                      <option value="facebook">Facebook 1.91:1</option>
+                      <option value="landscape">Lanskap 16:9</option>
+                      <option value="square">Kotak 1:1</option>
+                      <option value="feed">Feed 4:5</option>
+                      <option value="portrait">Potret 9:16</option>
+                      <option value="banner">Banner 1.91:1</option>
                     </select>
                   </label>
                 </div>
 
                 <button onClick={applyImageSettings}>
-                  Terapkan ke gambar
+                  ⚙️ Terapkan ke gambar
                 </button>
               </div>
             )}
           </div>
 
           <div className="editor-panel">
+            <p>Publikasi</p>
+            <button onClick={() => savePost("draft")} disabled={saving}>
+              💾 Simpan draft
+            </button>
+            <button className="publish" onClick={() => savePost("published")} disabled={saving}>
+              ✈ Publikasikan artikel
+            </button>
+          </div>
+
+          <div className="editor-panel">
             <p>Kualitas artikel</p>
-            <div className={title.trim() ? "ok" : "warn"}>Judul {title.trim() ? "siap" : "belum diisi"}</div>
-            <div className={excerpt.trim() ? "ok" : "warn"}>Ringkasan {excerpt.trim() ? "siap" : "belum diisi"}</div>
-            <div className={content.trim().length > 120 ? "ok" : "warn"}>Isi artikel {content.trim().length > 120 ? "cukup" : "masih pendek"}</div>
-            <div className={seoTitle.trim() && seoDescription.trim() ? "ok" : "warn"}>SEO {seoTitle.trim() && seoDescription.trim() ? "siap" : "belum lengkap"}</div>
+
+            <div className={title.trim() ? "ok" : "warn"}>
+              Judul {title.trim() ? "siap" : "belum diisi"}
+            </div>
+
+            <div className={excerpt.trim() ? "ok" : "warn"}>
+              Ringkasan {excerpt.trim() ? "siap" : "belum diisi"}
+            </div>
+
+            <div className={content.trim().length > 120 ? "ok" : "warn"}>
+              Isi artikel {content.trim().length > 120 ? "cukup" : "masih pendek"}
+            </div>
+
+            <div className={seoTitle.trim() && seoDescription.trim() ? "ok" : "warn"}>
+              SEO {seoTitle.trim() && seoDescription.trim() ? "siap" : "belum lengkap"}
+            </div>
           </div>
 
           <div className="editor-panel dark">
-            <p>AI Writing</p>
+            <p>Asisten tulisan</p>
             <h2>Buat draft lebih cepat.</h2>
-            <span>Generate outline, intro, SEO title, meta description, dan draft awal.</span>
-            <button onClick={generateDraft}>✦ Generate AI</button>
+            <span>
+              Bantu membuat outline, pembuka, ringkasan, dan deskripsi artikel.
+            </span>
+            <button onClick={generateDraft}>✦ Buat draft awal</button>
           </div>
 
           <div className="editor-panel">
             <p>Detail URL</p>
             <b>{publicUrl}</b>
-            <a href={publicUrl} target="_blank">Buka artikel publik</a>
+            <a href={publicUrl} target="_blank">
+              Buka artikel publik
+            </a>
           </div>
         </aside>
       </section>
