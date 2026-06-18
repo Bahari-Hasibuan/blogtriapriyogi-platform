@@ -1,3 +1,4 @@
+import "../components/auth.css";
 import "./globals.css";
 
 export const metadata = {

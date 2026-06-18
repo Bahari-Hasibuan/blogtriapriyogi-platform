@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import type { Provider } from "@supabase/supabase-js";
-import "./auth.css";
 
 type AuthMode = "login" | "signup";
 
