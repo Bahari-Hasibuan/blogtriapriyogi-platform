@@ -36,8 +36,19 @@ export function middleware(request: NextRequest) {
 
   const isRoot = host === ROOT_DOMAIN || host === `www.${ROOT_DOMAIN}`;
 
+  if (isRoot && url.pathname === "/dashboard") {
+    url.hostname = STUDIO_HOST;
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
   if (isRoot && studioOnlyPaths.some((path) => url.pathname.startsWith(path))) {
     url.hostname = STUDIO_HOST;
+    return NextResponse.redirect(url);
+  }
+
+  if (host === STUDIO_HOST && url.pathname === "/dashboard") {
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
@@ -48,7 +59,7 @@ export function middleware(request: NextRequest) {
 
   if (host === STUDIO_HOST && url.pathname === "/") {
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return NextResponse.rewrite(url);
   }
 
   if (

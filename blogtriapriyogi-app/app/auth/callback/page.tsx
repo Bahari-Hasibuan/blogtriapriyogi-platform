@@ -94,7 +94,7 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace("/");
     }
 
     finishLogin();
