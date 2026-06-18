@@ -782,13 +782,48 @@ Tutup artikel dengan ringkasan singkat dan ajakan untuk mengambil tindakan berik
                 }}
               />
 
-              <textarea
-                ref={textRef}
-                className="editor-body"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Mulai tulis artikel Anda di sini..."
-              />
+              <div className="editor-compose-grid">
+                <section
+                  className="editor-visual-draft"
+                  onClick={(event) => {
+                    const target = event.target as HTMLElement;
+                    const item = target.closest("[data-image-index]") as HTMLElement | null;
+
+                    if (!item) return;
+
+                    const index = Number(item.dataset.imageIndex || "-1");
+
+                    if (index >= 0) {
+                      selectImageForEditing(index);
+                    }
+                  }}
+                >
+                  <small>Tampilan artikel</small>
+                  <h1>{title || "Judul artikel"}</h1>
+                  <p>{excerpt || "Ringkasan artikel akan tampil di sini."}</p>
+                  <div dangerouslySetInnerHTML={{ __html: renderContent(content) }} />
+                </section>
+
+                <section className="editor-source-draft">
+                  <div className="source-head">
+                    <div>
+                      <b>Kode artikel</b>
+                      <span>URL gambar dan pengaturan tersimpan di sini.</span>
+                    </div>
+                    <button type="button" onClick={() => setTab("preview")}>
+                      ⚙️ Atur gambar
+                    </button>
+                  </div>
+
+                  <textarea
+                    ref={textRef}
+                    className="editor-body"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Mulai tulis artikel Anda di sini..."
+                  />
+                </section>
+              </div>
             </>
           )}
 
