@@ -8,10 +8,7 @@ import "../../components/dashboard.css";
 
 type View =
   | "home"
-  | "activity"
   | "posts"
-  | "newPost"
-  | "drafts"
   | "pages"
   | "media"
   | "theme"
@@ -26,25 +23,6 @@ type View =
   | "api"
   | "settings";
 
-type NavItem = {
-  view: View;
-  label: string;
-  icon: string;
-  child: string[];
-};
-
-type NavGroup = {
-  title: string;
-  items: NavItem[];
-};
-
-type PostItem = {
-  id: string;
-  title?: string | null;
-  status?: string | null;
-  created_at?: string | null;
-};
-
 type DomainItem = {
   id: string;
   kind: "Domain" | "Subdomain";
@@ -52,202 +30,11 @@ type DomainItem = {
   status: string;
 };
 
-const menuGroups: NavGroup[] = [
-  {
-    title: "Beranda",
-    items: [
-      {
-        view: "home",
-        label: "Dashboard",
-        icon: "▦",
-        child: ["Beranda", "Aktivitas", "Notifikasi"],
-      },
-    ],
-  },
-  {
-    title: "Konten",
-    items: [
-      {
-        view: "posts",
-        label: "Postingan",
-        icon: "▤",
-        child: ["Semua post", "Post baru", "Draft", "Terjadwal", "Sampah", "Revisi"],
-      },
-      {
-        view: "pages",
-        label: "Halaman",
-        icon: "▧",
-        child: ["Semua halaman", "Halaman baru", "Privacy", "Terms", "Contact"],
-      },
-      {
-        view: "media",
-        label: "Media",
-        icon: "▣",
-        child: ["Semua media", "Gambar", "Video", "Dokumen", "WebP"],
-      },
-    ],
-  },
-  {
-    title: "Tampilan",
-    items: [
-      {
-        view: "theme",
-        label: "Tema",
-        icon: "◐",
-        child: ["Galeri tema", "Edit HTML", "Mobile", "Desktop", "Cadangkan", "Pulihkan"],
-      },
-      {
-        view: "layout",
-        label: "Tata Letak",
-        icon: "▥",
-        child: ["Layout utama", "Header", "Footer", "Sidebar", "Widget"],
-      },
-    ],
-  },
-  {
-    title: "Pertumbuhan",
-    items: [
-      {
-        view: "stats",
-        label: "Statistik",
-        icon: "↗",
-        child: ["Ringkasan", "Hari", "Minggu", "Bulan", "Tahun", "Real-time"],
-      },
-      {
-        view: "revenue",
-        label: "Penghasilan",
-        icon: "$",
-        child: ["Ringkasan", "Sponsor", "Afiliasi", "Iklan"],
-      },
-      {
-        view: "seo",
-        label: "SEO",
-        icon: "⌕",
-        child: ["Sitemap", "Schema", "Meta Tags", "Robots", "Indexing"],
-      },
-    ],
-  },
-  {
-    title: "AI Studio",
-    items: [
-      {
-        view: "ai",
-        label: "AI Tools",
-        icon: "✦",
-        child: ["Chat AI", "Generate Artikel", "Rewrite", "SEO AI", "Image Gen", "Research"],
-      },
-    ],
-  },
-  {
-    title: "Pengaturan",
-    items: [
-      {
-        view: "settings",
-        label: "Pengaturan",
-        icon: "⚙",
-        child: ["Umum", "Brand", "Bahasa", "Keamanan"],
-      },
-      {
-        view: "domain",
-        label: "Domain",
-        icon: "◎",
-        child: ["Domain utama", "Subdomain", "Custom domain", "DNS"],
-      },
-      {
-        view: "integrations",
-        label: "Integrasi",
-        icon: "⌁",
-        child: ["Google", "LinkedIn", "Supabase", "Vercel", "Cloudflare", "OpenAI"],
-      },
-      {
-        view: "users",
-        label: "Pengguna",
-        icon: "♙",
-        child: ["Admin", "Penulis", "Editor", "Pembaca"],
-      },
-      {
-        view: "api",
-        label: "API",
-        icon: "<>",
-        child: ["Docs", "Keys", "Webhooks"],
-      },
-    ],
-  },
-];
-
-const moduleCopy: Record<View, { title: string; subtitle: string }> = {
-  home: {
-    title: "Dashboard",
-    subtitle: "Ringkasan website, performa, domain, dan aktivitas konten.",
-  },
-  activity: {
-    title: "Aktivitas",
-    subtitle: "Pantau aktivitas terbaru dari konten, login, dan sistem.",
-  },
-  posts: {
-    title: "Postingan",
-    subtitle: "Kelola semua post, draft, jadwal, revisi, dan sampah.",
-  },
-  newPost: {
-    title: "Post baru",
-    subtitle: "Mulai tulis artikel baru dari ruang editor.",
-  },
-  drafts: {
-    title: "Draft",
-    subtitle: "Kelola artikel yang belum dipublikasikan.",
-  },
-  pages: {
-    title: "Halaman",
-    subtitle: "Kelola halaman About, Contact, Privacy, Terms, dan halaman statis lain.",
-  },
-  media: {
-    title: "Media",
-    subtitle: "Kelola gambar, video, dokumen, dan file WebP.",
-  },
-  theme: {
-    title: "Tema",
-    subtitle: "Atur tampilan, mode mobile, desktop, backup, dan restore.",
-  },
-  layout: {
-    title: "Tata Letak",
-    subtitle: "Atur layout utama, header, footer, sidebar, dan widget.",
-  },
-  stats: {
-    title: "Statistik",
-    subtitle: "Pantau kunjungan, negara, perangkat, referrer, dan real-time analytics.",
-  },
-  revenue: {
-    title: "Penghasilan",
-    subtitle: "Kelola sponsor, iklan, afiliasi, dan sumber penghasilan.",
-  },
-  seo: {
-    title: "SEO",
-    subtitle: "Kelola sitemap, robots, schema, meta tags, dan indexing.",
-  },
-  ai: {
-    title: "AI Tools",
-    subtitle: "Gunakan AI untuk artikel, rewrite, SEO, ide gambar, dan research.",
-  },
-  domain: {
-    title: "Domain",
-    subtitle: "Kelola domain utama, custom domain, subdomain, dan instruksi DNS.",
-  },
-  integrations: {
-    title: "Integrasi",
-    subtitle: "Hubungkan Google, LinkedIn, Supabase, Vercel, Cloudflare, dan AI provider.",
-  },
-  users: {
-    title: "Pengguna",
-    subtitle: "Kelola admin, penulis, editor, pembaca, dan hak akses.",
-  },
-  api: {
-    title: "API",
-    subtitle: "Kelola dokumentasi, keys, dan webhooks.",
-  },
-  settings: {
-    title: "Pengaturan",
-    subtitle: "Atur brand, bahasa, keamanan, email, dan preferensi.",
-  },
+type PostItem = {
+  id: string;
+  title?: string | null;
+  status?: string | null;
+  created_at?: string | null;
 };
 
 export default function DashboardPage() {
@@ -447,6 +234,129 @@ export default function DashboardPage() {
     router.push("/login");
   }
 
+  const menuGroups = [
+    {
+      title: "Beranda",
+      items: [
+        {
+          view: "home",
+          label: "Dashboard",
+          icon: "▦",
+          child: ["Beranda", "Aktivitas", "Notifikasi"],
+        },
+      ],
+    },
+    {
+      title: "Konten",
+      items: [
+        {
+          view: "posts",
+          label: "Postingan",
+          icon: "▤",
+          child: ["Semua post", "Post baru", "Draft", "Terjadwal", "Sampah", "Revisi"],
+        },
+        {
+          view: "pages",
+          label: "Halaman",
+          icon: "▧",
+          child: ["Semua halaman", "Halaman baru"],
+        },
+        {
+          view: "media",
+          label: "Media",
+          icon: "▣",
+          child: ["Semua media", "Gambar", "Video", "Dokumen", "WebP"],
+        },
+      ],
+    },
+    {
+      title: "Tampilan",
+      items: [
+        {
+          view: "theme",
+          label: "Tema",
+          icon: "◐",
+          child: ["Galeri tema", "Edit HTML", "Mobile", "Desktop", "Cadangkan", "Pulihkan"],
+        },
+        {
+          view: "layout",
+          label: "Tata Letak",
+          icon: "▥",
+          child: ["Layout utama", "Header", "Footer", "Sidebar", "Widget"],
+        },
+      ],
+    },
+    {
+      title: "Pertumbuhan",
+      items: [
+        {
+          view: "stats",
+          label: "Statistik",
+          icon: "↗",
+          child: ["Ringkasan", "Hari", "Minggu", "Bulan", "Tahun", "Real-time"],
+        },
+        {
+          view: "revenue",
+          label: "Penghasilan",
+          icon: "$",
+          child: ["Ringkasan", "Sponsor", "Afiliasi", "Iklan"],
+        },
+        {
+          view: "seo",
+          label: "SEO",
+          icon: "⌕",
+          child: ["Sitemap", "Schema", "Meta Tags", "Robots", "Indexing"],
+        },
+      ],
+    },
+    {
+      title: "AI Studio",
+      items: [
+        {
+          view: "ai",
+          label: "AI Tools",
+          icon: "✦",
+          child: ["Chat AI", "Generate Artikel", "Rewrite", "SEO AI", "Image Gen", "Research"],
+        },
+      ],
+    },
+    {
+      title: "Pengaturan",
+      items: [
+        {
+          view: "settings",
+          label: "Pengaturan",
+          icon: "⚙",
+          child: ["Umum", "Brand", "Bahasa", "Keamanan"],
+        },
+        {
+          view: "domain",
+          label: "Domain",
+          icon: "◎",
+          child: ["Domain utama", "Subdomain", "Custom domain", "DNS"],
+        },
+        {
+          view: "integrations",
+          label: "Integrasi",
+          icon: "⌁",
+          child: ["Google", "LinkedIn", "Supabase", "Vercel", "Cloudflare", "OpenAI"],
+        },
+        {
+          view: "users",
+          label: "Pengguna",
+          icon: "♙",
+          child: ["Admin", "Penulis", "Editor", "Pembaca"],
+        },
+        {
+          view: "api",
+          label: "API",
+          icon: "<>",
+          child: ["Docs", "Keys", "Webhooks"],
+        },
+      ],
+    },
+  ];
+
   if (!ready) {
     return (
       <main className="dash-loading">
@@ -470,7 +380,6 @@ export default function DashboardPage() {
               <small>Creator Platform</small>
             </div>
           </Link>
-
           <button onClick={() => setMenuOpen(false)}>×</button>
         </div>
 
@@ -484,7 +393,7 @@ export default function DashboardPage() {
                   <button
                     className={view === item.view ? "active" : ""}
                     onClick={() => {
-                      setView(item.view);
+                      setView(item.view as View);
                       setMenuOpen(false);
                     }}
                   >
@@ -507,13 +416,7 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {menuOpen && (
-        <button
-          className="dash-overlay"
-          onClick={() => setMenuOpen(false)}
-          aria-label="Tutup menu"
-        />
-      )}
+      {menuOpen && <button className="dash-overlay" onClick={() => setMenuOpen(false)} />}
 
       <section className="dash-main">
         <header className="dash-topbar">
@@ -527,11 +430,9 @@ export default function DashboardPage() {
           </div>
 
           <div className="dash-top-actions">
-            <button type="button">✦ AI Assistant</button>
-            <button type="button">🔔</button>
-            <button type="button" className="dash-avatar">
-              {initials}
-            </button>
+            <button>✦ AI Assistant</button>
+            <button>🔔</button>
+            <button className="dash-avatar">{initials}</button>
           </div>
         </header>
 
@@ -567,7 +468,6 @@ export default function DashboardPage() {
                   Dashboard modern untuk menulis, mengatur website, melihat performa,
                   dan menyiapkan pertumbuhan blog.
                 </p>
-
                 <div>
                   <Link href="/editor">Mulai menulis</Link>
                   <button onClick={() => setView("domain")}>Atur domain</button>
@@ -587,19 +487,16 @@ export default function DashboardPage() {
                 <b>0</b>
                 <small>Analytics segera disambungkan</small>
               </article>
-
               <article>
                 <span>Total post</span>
                 <b>{totalPosts}</b>
                 <small>Semua artikel</small>
               </article>
-
               <article>
                 <span>Dipublikasi</span>
                 <b>{publishedPosts}</b>
                 <small>Artikel tayang</small>
               </article>
-
               <article>
                 <span>Draft</span>
                 <b>{draftPosts}</b>
@@ -663,7 +560,6 @@ export default function DashboardPage() {
                     placeholder="triapriyogi.com"
                   />
                 </label>
-
                 <button className="dash-primary" onClick={saveMainDomain}>
                   Simpan domain utama
                 </button>
@@ -681,7 +577,6 @@ export default function DashboardPage() {
                     <span>.{cleanDomain(mainDomain)}</span>
                   </div>
                 </label>
-
                 <button className="dash-primary" onClick={addSubdomain}>
                   Tambah subdomain
                 </button>
@@ -696,7 +591,6 @@ export default function DashboardPage() {
                     placeholder="domainanda.com"
                   />
                 </label>
-
                 <button className="dash-primary" onClick={addDomain}>
                   Tambah custom domain
                 </button>
@@ -708,12 +602,10 @@ export default function DashboardPage() {
                     <b>1. Tambahkan di Vercel</b>
                     <small>Project Settings → Domains.</small>
                   </div>
-
                   <div>
                     <b>2. Arahkan DNS</b>
                     <small>Gunakan Cloudflare atau registrar domain.</small>
                   </div>
-
                   <div>
                     <b>3. Tambahkan redirect</b>
                     <small>Supabase Auth → URL Configuration.</small>
@@ -752,30 +644,14 @@ export default function DashboardPage() {
         )}
 
         {view === "integrations" && (
-          <section className="dash-content">
-            <div className="dash-title">
-              <div>
-                <p>Integrasi</p>
-                <h1>Hubungkan layanan utama</h1>
-                <span>Google, LinkedIn, Supabase, Vercel, Cloudflare, dan AI provider.</span>
-              </div>
-            </div>
-
-            <div className="dash-integration-grid">
-              <IntegrationCard title="Google Login" desc="Login sosial Google melalui Supabase Auth." status="Aktif" />
-              <IntegrationCard title="LinkedIn Login" desc="Login LinkedIn OIDC melalui Supabase Auth." status="Aktif" />
-              <IntegrationCard title="Email Auth" desc="Email dan password sudah tersambung ke Supabase." status="Aktif" />
-              <IntegrationCard title="Supabase Database" desc="Menyimpan profiles, posts, dan data platform." status="Aktif" />
-              <IntegrationCard title="Vercel Hosting" desc="Deploy otomatis dari GitHub ke production." status="Aktif" />
-              <IntegrationCard title="Cloudflare DNS" desc="Disiapkan untuk cache, DNS, dan proteksi." status="DNS" />
-              <IntegrationCard title="OpenAI" desc="Disiapkan untuk workflow AI writing assistant." status="Segera" />
-              <IntegrationCard title="Analytics" desc="Disiapkan untuk traffic dan performa konten." status="Segera" />
-            </div>
-          </section>
+          <Module
+            title="Integrasi"
+            subtitle="Hubungkan Google, LinkedIn, Supabase, Vercel, Cloudflare, dan AI provider."
+          />
         )}
 
         {view !== "home" && view !== "domain" && view !== "integrations" && (
-          <Module title={moduleCopy[view].title} subtitle={moduleCopy[view].subtitle} />
+          <Module title={moduleTitle(view)} subtitle={moduleSubtitle(view)} />
         )}
       </section>
     </main>
@@ -802,10 +678,8 @@ function Panel({
           <p>{label}</p>
           <h2>{title}</h2>
         </div>
-
         {action && actionText && <Link href={action}>{actionText}</Link>}
       </div>
-
       {children}
     </article>
   );
@@ -826,54 +700,5 @@ function Module({ title, subtitle }: { title: string; subtitle: string }) {
         <Panel title={title} label="Fitur">
           <div className="dash-empty">
             <b>Ruang kerja sudah disiapkan.</b>
-            <small>
-              Menu ini siap dikembangkan ke database dan fitur detail berikutnya.
-            </small>
-          </div>
-        </Panel>
-
-        <Panel title="Status" label="Sistem">
-          <div className="dash-dns">
-            <div>
-              <b>UI aktif</b>
-              <small>Menu sudah bisa dibuka.</small>
-            </div>
-
-            <div>
-              <b>Tahap berikut</b>
-              <small>Sambungkan tabel dan fungsi sesuai kebutuhan.</small>
-            </div>
-
-            <div>
-              <b>Integrasi</b>
-              <small>Siap dihubungkan dengan Supabase, Vercel, dan Cloudflare.</small>
-            </div>
-          </div>
-        </Panel>
-      </div>
-    </section>
-  );
-}
-
-function IntegrationCard({
-  title,
-  desc,
-  status,
-}: {
-  title: string;
-  desc: string;
-  status: string;
-}) {
-  return (
-    <article className="dash-integration-card">
-      <div>
-        <b>{title}</b>
-        <small>{desc}</small>
-      </div>
-
-      <span className={status === "Aktif" ? "ready" : status === "DNS" ? "dns" : "soon"}>
-        {status}
-      </span>
-    </article>
-  );
-}
+            <small>Menu ini siap dikembangkan ke database dan fitur detail berikutnya.</small>
+          <EOF
