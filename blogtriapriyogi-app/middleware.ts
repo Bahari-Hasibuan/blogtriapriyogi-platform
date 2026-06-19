@@ -11,25 +11,27 @@ export async function middleware(req: any) {
 
   if (!host) return NextResponse.next();
 
-  // skip sistem utama
+  // skip domain utama
   if (host.includes("triapriyogi.com")) {
     return NextResponse.next();
   }
 
-  // cari domain di database
-  const { data } = await supabase
+  // NORMALIZE DOMAIN
+  const cleanHost = host.replace("www.", "");
+
+  // 🔥 lookup domain di DB
+  const { data, error } = await supabase
     .from("site_domains")
     .select("user_id, hostname, status")
-    .eq("hostname", host)
+    .eq("hostname", cleanHost)
     .eq("status", "active")
     .maybeSingle();
 
-  // kalau tidak ketemu
-  if (!data) {
+  if (error || !data) {
     return NextResponse.rewrite(new URL("/domain-not-found", req.url));
   }
 
-  // arahkan ke website user
+  // route ke user site
   const url = req.nextUrl.clone();
   url.pathname = `/site/${data.user_id}${url.pathname}`;
 
