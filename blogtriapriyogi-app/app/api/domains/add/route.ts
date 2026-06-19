@@ -7,17 +7,6 @@ const ROOT_DOMAIN = "triapriyogi.com";
 const CONNECT_HOST = "connect.triapriyogi.com";
 const ROOT_A_RECORD = "76.76.21.21";
 
-const reservedHosts = new Set([
-  "triapriyogi.com",
-  "www.triapriyogi.com",
-  "studio.triapriyogi.com",
-  "connect.triapriyogi.com",
-  "api.triapriyogi.com",
-  "admin.triapriyogi.com",
-  "mail.triapriyogi.com",
-  "support.triapriyogi.com",
-]);
-
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, { status });
 }
@@ -106,10 +95,6 @@ export async function POST(request: NextRequest) {
       },
       400
     );
-  }
-
-  if (reservedHosts.has(hostname)) {
-    return json({ ok: false, message: "Domain ini termasuk alamat sistem." }, 400);
   }
 
   const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
