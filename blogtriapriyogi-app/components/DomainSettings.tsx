@@ -1,366 +1,391 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type SiteDomainItem = {
+type Profile = {
   id: string;
-  domain_type: "system_subdomain" | "custom_domain";
-  hostname: string;
-  status: string;
-  is_primary: boolean;
-  verification_token?: string | null;
+  blog_name: string | null;
+  blog_slug: string | null;
+  blog_category?: string | null;
 };
 
+type DomainRow = {
+  id: string;
+  user_id: string;
+  hostname: string;
+  domain_type: "system_subdomain" | "custom_domain";
+  status: "pending" | "needs_dns" | "active" | "failed" | "disabled";
+  is_primary: boolean;
+  verification_token: string | null;
+  verification_record_name: string | null;
+  dns_record_type: string | null;
+  dns_record_name: string | null;
+  dns_record_value: string | null;
+  error_message: string | null;
+  last_checked_at: string | null;
+  verified_at: string | null;
+};
+
+const ROOT_DOMAIN = "triapriyogi.com";
+
+const reservedSlugs = new Set([
+  "www",
+  "studio",
+  "connect",
+  "api",
+  "admin",
+  "login",
+  "signup",
+  "dashboard",
+  "editor",
+  "mail",
+  "support",
+  "help",
+  "terms",
+  "privacy",
+]);
+
 function makeSlug(value: string) {
-  return value
+  return String(value || "")
     .toLowerCase()
     .trim()
     .replace(/['"]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 50);
+    .slice(0, 48);
 }
 
 function cleanHostname(value: string) {
-  return value
+  return String(value || "")
     .trim()
     .toLowerCase()
-    .replace("https://", "")
-    .replace("http://", "")
-    .replace("www.", "")
-    .replaceAll("/", "");
+    .replace(/^https?:\/\//, "")
+    .split("/")[0]
+    .split("?")[0]
+    .replace(/\.$/, "");
 }
 
-function isReserved(value: string) {
-  return new Set([
-    "www",
-    "studio",
-    "admin",
-    "api",
-    "auth",
-    "login",
-    "signup",
-    "dashboard",
-    "editor",
-    "settings",
-    "mail",
-    "support",
-    "help",
-    "terms",
-    "privacy",
-  ]).has(value);
+function statusLabel(status: string) {
+  if (status === "active") return "Aktif";
+  if (status === "needs_dns") return "Perlu DNS";
+  if (status === "failed") return "Bermasalah";
+  if (status === "disabled") return "Nonaktif";
+  return "Pending";
+}
+
+function statusClass(status: string) {
+  if (status === "active") return "active";
+  if (status === "failed") return "failed";
+  if (status === "needs_dns") return "needs";
+  return "pending";
 }
 
 export default function DomainSettings() {
-  const [userId, setUserId] = useState("");
-  const [blogName, setBlogName] = useState("");
-  const [blogSlug, setBlogSlug] = useState("");
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [domains, setDomains] = useState<DomainRow[]>([]);
   const [slugInput, setSlugInput] = useState("");
-  const [customInput, setCustomInput] = useState("");
-  const [domains, setDomains] = useState<SiteDomainItem[]>([]);
+  const [customDomain, setCustomDomain] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [savingSlug, setSavingSlug] = useState(false);
+  const [addingDomain, setAddingDomain] = useState(false);
   const [notice, setNotice] = useState("");
-  const [saving, setSaving] = useState(false);
+
+  const activeAddress = useMemo(() => {
+    const slug = slugInput || profile?.blog_slug || "";
+    return slug ? `${slug}.${ROOT_DOMAIN}` : `nama-anda.${ROOT_DOMAIN}`;
+  }, [slugInput, profile?.blog_slug]);
 
   useEffect(() => {
-    load();
+    loadDomainData();
   }, []);
 
-  async function load() {
+  async function loadDomainData() {
+    setLoading(true);
+
     const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
 
-    setUserId(data.user.id);
+    if (!data.user) {
+      window.location.replace("https://triapriyogi.com/login");
+      return;
+    }
 
-    const profile = await supabase
+    const profileResult = await supabase
       .from("profiles")
-      .select("blog_name, blog_slug")
+      .select("id,blog_name,blog_slug,blog_category")
       .eq("id", data.user.id)
       .single();
 
-    if (profile.data) {
-      setBlogName(profile.data.blog_name || "Platform saya");
-      setBlogSlug(profile.data.blog_slug || "");
-      setSlugInput(profile.data.blog_slug || "");
+    if (profileResult.data) {
+      setProfile(profileResult.data as Profile);
+      setSlugInput(profileResult.data.blog_slug || "");
     }
 
-    const domainRows = await supabase
+    const domainsResult = await supabase
       .from("site_domains")
-      .select("id,domain_type,hostname,status,is_primary,verification_token")
+      .select("id,user_id,hostname,domain_type,status,is_primary,verification_token,verification_record_name,dns_record_type,dns_record_name,dns_record_value,error_message,last_checked_at,verified_at")
       .eq("user_id", data.user.id)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
-    if (domainRows.data) {
-      setDomains(domainRows.data as SiteDomainItem[]);
+    if (domainsResult.data) {
+      setDomains(domainsResult.data as DomainRow[]);
     }
+
+    setLoading(false);
   }
 
   async function savePublicAddress() {
-    const nextSlug = makeSlug(slugInput);
+    const cleanSlug = makeSlug(slugInput);
 
-    if (nextSlug.length < 3) {
-      setNotice("Alamat minimal 3 karakter.");
-      return;
-    }
-
-    if (isReserved(nextSlug)) {
-      setNotice("Alamat ini dipakai sistem. Pilih nama lain.");
-      return;
-    }
-
-    setSaving(true);
     setNotice("");
+
+    if (!cleanSlug) {
+      setNotice("Nama alamat belum valid.");
+      return;
+    }
+
+    if (reservedSlugs.has(cleanSlug)) {
+      setNotice("Nama alamat ini dipakai sistem. Pilih nama lain.");
+      return;
+    }
+
+    setSavingSlug(true);
+
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      window.location.replace("https://triapriyogi.com/login");
+      return;
+    }
+
+    const hostname = `${cleanSlug}.${ROOT_DOMAIN}`;
 
     const taken = await supabase
       .from("profiles")
       .select("id")
-      .eq("blog_slug", nextSlug)
-      .neq("id", userId)
+      .eq("blog_slug", cleanSlug)
+      .neq("id", data.user.id)
       .maybeSingle();
 
-    if (taken.data?.id) {
-      setSaving(false);
-      setNotice("Alamat ini sudah dipakai pengguna lain.");
+    if (taken.data) {
+      setSavingSlug(false);
+      setNotice("Nama alamat sudah digunakan akun lain.");
       return;
     }
 
-    const updateProfile = await supabase
+    const profileUpdate = await supabase
       .from("profiles")
       .update({
-        blog_slug: nextSlug,
-        blog_slug_changed_at: new Date().toISOString(),
+        blog_slug: cleanSlug,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", userId);
+      .eq("id", data.user.id);
 
-    if (updateProfile.error) {
-      setSaving(false);
-      setNotice("Gagal menyimpan alamat.");
+    if (profileUpdate.error) {
+      setSavingSlug(false);
+      setNotice(profileUpdate.error.message);
       return;
     }
 
     await supabase
       .from("site_domains")
       .delete()
-      .eq("user_id", userId)
+      .eq("user_id", data.user.id)
       .eq("domain_type", "system_subdomain");
 
     await supabase.from("site_domains").insert({
-      user_id: userId,
+      user_id: data.user.id,
       domain_type: "system_subdomain",
-      hostname: `${nextSlug}.triapriyogi.com`,
+      hostname,
       status: "active",
       is_primary: true,
+      dns_record_type: "CNAME",
+      dns_record_name: cleanSlug,
+      dns_record_value: "cname.vercel-dns.com",
+      verified_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     });
 
-    setBlogSlug(nextSlug);
-    setSlugInput(nextSlug);
-    setSaving(false);
-    setNotice("Alamat platform berhasil disimpan.");
-    await load();
+    setNotice("Alamat bawaan berhasil disimpan.");
+    setSavingSlug(false);
+    await loadDomainData();
   }
 
   async function addCustomDomain() {
-    const hostname = cleanHostname(customInput);
+    const hostname = cleanHostname(customDomain);
 
-    if (!hostname.includes(".")) {
-      setNotice("Domain pribadi belum valid. Contoh: brandanda.com");
-      return;
-    }
-
-    if (hostname === "triapriyogi.com" || hostname.endsWith(".triapriyogi.com")) {
-      setNotice("Alamat triapriyogi.com diatur dari kolom alamat platform, bukan domain pribadi.");
-      return;
-    }
-
-    setSaving(true);
     setNotice("");
 
-    const result = await supabase.from("site_domains").insert({
-      user_id: userId,
-      domain_type: "custom_domain",
-      hostname,
-      status: "pending",
-      is_primary: false,
-    });
-
-    if (result.error) {
-      setSaving(false);
-      setNotice("Gagal menambahkan domain. Mungkin sudah dipakai akun lain.");
+    if (!hostname || !hostname.includes(".")) {
+      setNotice("Masukkan domain pribadi yang valid. Contoh: www.domainanda.com");
       return;
     }
 
-    setCustomInput("");
-    setSaving(false);
-    setNotice("Domain pribadi ditambahkan. Silakan pasang kode verifikasi DNS.");
-    await load();
+    setAddingDomain(true);
+
+    const sessionResult = await supabase.auth.getSession();
+    const token = sessionResult.data.session?.access_token;
+
+    if (!token) {
+      setAddingDomain(false);
+      window.location.replace("https://triapriyogi.com/login");
+      return;
+    }
+
+    const result = await fetch("/api/domains/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ hostname }),
+    });
+
+    const json = await result.json().catch(() => null);
+
+    setAddingDomain(false);
+
+    if (!result.ok || !json?.ok) {
+      setNotice(json?.message || "Gagal menambahkan domain pribadi.");
+      return;
+    }
+
+    setCustomDomain("");
+    setNotice(json.message || "Domain pribadi berhasil ditambahkan.");
+    await loadDomainData();
   }
 
-  async function removeDomain(id: string) {
-    await supabase.from("site_domains").delete().eq("id", id);
-    setNotice("Domain dihapus.");
-    await load();
+  if (loading) {
+    return (
+      <section className="dash-content">
+        <div className="dash-title">
+          <div>
+            <p>Domain</p>
+            <h1>Menyiapkan pengaturan domain...</h1>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <section className="dash-content">
+    <section className="dash-content domain-settings">
       <div className="dash-title">
         <div>
           <p>Domain</p>
           <h1>Alamat platform</h1>
-          <span>
-            Atur alamat publik, domain pribadi, dan verifikasi DNS untuk website pengguna.
-          </span>
+          <span>Atur alamat publik, domain pribadi, dan verifikasi DNS untuk website pengguna.</span>
         </div>
       </div>
 
       {notice && <div className="domain-notice">{notice}</div>}
 
-      <div className="dash-grid-two">
-        <article className="dash-panel">
-          <div className="dash-panel-head">
-            <div>
-              <p>Alamat bawaan</p>
-              <h2>Nama / brand / bisnis / website</h2>
-            </div>
+      <article className="domain-card">
+        <p>Alamat bawaan</p>
+        <h2>Nama / brand / bisnis / website</h2>
+
+        <label className="domain-label">
+          Nama alamat
+          <div className="domain-input-suffix">
+            <input
+              value={slugInput}
+              onChange={(event) => setSlugInput(makeSlug(event.target.value))}
+              placeholder="contoh: andi, tokokita, studio-kopi"
+            />
+            <span>.triapriyogi.com</span>
           </div>
+        </label>
 
-          <div className="domain-manager">
-            <label>
-              Nama alamat
-              <div className="domain-inline-input">
-                <input
-                  value={slugInput}
-                  onChange={(e) => setSlugInput(makeSlug(e.target.value))}
-                  placeholder="contoh: andi, tokokita, studio-kopi"
-                />
-                <span>.triapriyogi.com</span>
-              </div>
-              <small>
-                Gunakan nama singkat yang mudah diingat. Contoh: andi.triapriyogi.com
-              </small>
-            </label>
+        <small>Gunakan nama singkat yang mudah diingat. Contoh: andi.triapriyogi.com</small>
 
-            <div className="domain-preview-card">
-              <small>Alamat aktif</small>
-              <b>{blogSlug || slugInput || "nama-anda"}.triapriyogi.com</b>
-              <span>Halaman publik untuk {blogName || "website pengguna"}.</span>
-            </div>
-
-            <button onClick={savePublicAddress} disabled={saving}>
-              {saving ? "Menyimpan..." : "Simpan alamat"}
-            </button>
-          </div>
-        </article>
-
-        <article className="dash-panel">
-          <div className="dash-panel-head">
-            <div>
-              <p>Domain pribadi</p>
-              <h2>Hubungkan domain sendiri</h2>
-            </div>
-          </div>
-
-          <div className="domain-manager">
-            <label>
-              Nama domain
-              <input
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="contoh: brandanda.com"
-              />
-              <small>
-                Cocok untuk pengguna yang sudah punya domain sendiri.
-              </small>
-            </label>
-
-            <div className="domain-dns-box">
-              <b>Server tujuan</b>
-              <span>Type: CNAME</span>
-              <span>Host: www atau subdomain pilihan</span>
-              <span>Target: connect.triapriyogi.com</span>
-            </div>
-
-            <button onClick={addCustomDomain} disabled={saving}>
-              {saving ? "Menyimpan..." : "Tambah domain pribadi"}
-            </button>
-          </div>
-        </article>
-      </div>
-
-      <article className="dash-panel">
-        <div className="dash-panel-head">
-          <div>
-            <p>Verifikasi DNS</p>
-            <h2>Domain tersimpan</h2>
-          </div>
+        <div className="domain-active-box">
+          <p>Alamat aktif</p>
+          <b>{activeAddress}</b>
+          <span>Halaman publik untuk {profile?.blog_name || "website Anda"}.</span>
         </div>
 
-        {domains.length > 0 ? (
-          <div className="domain-table">
+        <button className="domain-primary-button" onClick={savePublicAddress} disabled={savingSlug}>
+          {savingSlug ? "Menyimpan..." : "Simpan alamat"}
+        </button>
+      </article>
+
+      <article className="domain-card">
+        <p>Domain pribadi</p>
+        <h2>Hubungkan domain sendiri</h2>
+
+        <label className="domain-label">
+          Nama domain
+          <input
+            value={customDomain}
+            onChange={(event) => setCustomDomain(event.target.value)}
+            placeholder="contoh: www.domainanda.com"
+          />
+        </label>
+
+        <small>Cocok untuk pengguna yang sudah punya domain sendiri.</small>
+
+        <div className="domain-dns-box">
+          <b>Server tujuan</b>
+          <span>Root domain: A → 76.76.21.21</span>
+          <span>Subdomain / www: CNAME → connect.triapriyogi.com</span>
+        </div>
+
+        <button className="domain-primary-button" onClick={addCustomDomain} disabled={addingDomain}>
+          {addingDomain ? "Menambahkan..." : "Tambah domain pribadi"}
+        </button>
+      </article>
+
+      <article className="domain-card">
+        <p>Verifikasi DNS</p>
+        <h2>Domain tersimpan</h2>
+
+        {domains.length === 0 ? (
+          <div className="domain-empty">
+            <b>Belum ada domain tersimpan.</b>
+            <span>Simpan alamat bawaan atau tambahkan domain pribadi.</span>
+          </div>
+        ) : (
+          <div className="domain-list">
             {domains.map((item) => (
-              <div key={item.id} className="domain-row-pro">
-                <div className="domain-row-main">
+              <div className="domain-row" key={item.id}>
+                <div className="domain-row-head">
                   <div>
                     <b>{item.hostname}</b>
-                    <small>
+                    <span>
                       {item.domain_type === "system_subdomain"
                         ? "Alamat bawaan"
                         : "Domain pribadi"}
-                    </small>
+                    </span>
                   </div>
 
-                  <span className={`domain-status ${item.status}`}>
-                    {item.status === "active"
-                      ? "aktif"
-                      : item.status === "verified"
-                      ? "terverifikasi"
-                      : "menunggu verifikasi"}
-                  </span>
+                  <strong className={`domain-status ${statusClass(item.status)}`}>
+                    {statusLabel(item.status)}
+                  </strong>
                 </div>
 
                 {item.domain_type === "custom_domain" && (
-                  <div className="dns-verification-card">
+                  <div className="domain-instructions">
                     <div>
-                      <b>Tambahkan record TXT</b>
-                      <small>Gunakan kode ini untuk membuktikan bahwa domain milik Anda.</small>
+                      <p>Verifikasi kepemilikan</p>
+                      <code>Type: TXT</code>
+                      <code>Name: {item.verification_record_name || "_triapriyogi"}</code>
+                      <code>Value: triapriyogi-verify={item.verification_token}</code>
                     </div>
 
-                    <div className="dns-code-grid">
-                      <span>Type</span>
-                      <code>TXT</code>
-
-                      <span>Name</span>
-                      <code>_triapriyogi</code>
-
-                      <span>Value</span>
-                      <code>triapriyogi-verify={item.verification_token}</code>
+                    <div>
+                      <p>Arahkan domain</p>
+                      <code>Type: {item.dns_record_type}</code>
+                      <code>Name: {item.dns_record_name}</code>
+                      <code>Value: {item.dns_record_value}</code>
                     </div>
-
-                    <div className="dns-code-grid">
-                      <span>Server</span>
-                      <code>connect.triapriyogi.com</code>
-                    </div>
-
-                    <button onClick={() => removeDomain(item.id)}>
-                      Hapus domain
-                    </button>
                   </div>
                 )}
 
-                {item.domain_type === "system_subdomain" && (
-                  <div className="dns-simple-card">
-                    <b>Siap digunakan</b>
-                    <small>Alamat bawaan tidak perlu verifikasi DNS manual.</small>
-                  </div>
+                {item.error_message && (
+                  <div className="domain-error">{item.error_message}</div>
                 )}
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="dash-empty">
-            <b>Belum ada domain tersimpan.</b>
-            <small>Simpan alamat bawaan atau tambahkan domain pribadi.</small>
           </div>
         )}
       </article>
