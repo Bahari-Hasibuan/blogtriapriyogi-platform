@@ -4,6 +4,27 @@ import type { NextRequest } from "next/server";
 const ROOT_DOMAIN = "triapriyogi.com";
 const STUDIO_HOST = "studio.triapriyogi.com";
 
+
+function isLocalOrPreviewHost(host: string) {
+  return (
+    host.includes("localhost") ||
+    host.includes("127.0.0.1") ||
+    host.endsWith(".github.dev") ||
+    host.endsWith(".vercel.app")
+  );
+}
+
+function isCustomUserDomain(host: string) {
+  if (!host) return false;
+  if (isLocalOrPreviewHost(host)) return false;
+  if (host === ROOT_DOMAIN) return false;
+  if (host === `www.${ROOT_DOMAIN}`) return false;
+  if (host === STUDIO_HOST) return false;
+  if (host.endsWith(`.${ROOT_DOMAIN}`)) return false;
+  return true;
+}
+
+
 const reservedSubdomains = new Set([
   "www",
   "studio",
@@ -79,6 +100,14 @@ export function proxy(request: NextRequest) {
 
       return NextResponse.rewrite(url);
     }
+  }
+
+
+  if (isCustomUserDomain(host)) {
+    url.pathname = "/custom-domain";
+    url.searchParams.set("host", host);
+    url.searchParams.set("path", request.nextUrl.pathname);
+    return NextResponse.rewrite(url);
   }
 
   return NextResponse.next();
