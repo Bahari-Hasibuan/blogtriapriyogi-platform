@@ -89,6 +89,7 @@ export default function DomainSettings() {
   const [loading, setLoading] = useState(true);
   const [savingSlug, setSavingSlug] = useState(false);
   const [addingDomain, setAddingDomain] = useState(false);
+  const [checkingDomainId, setCheckingDomainId] = useState("");
   const [notice, setNotice] = useState("");
 
   const activeAddress = useMemo(() => {
@@ -255,6 +256,44 @@ export default function DomainSettings() {
     await loadDomainData();
   }
 
+
+  async function checkDomainDns(domainId: string) {
+    setNotice("");
+    setCheckingDomainId(domainId);
+
+    const sessionResult = await supabase.auth.getSession();
+    const token = sessionResult.data.session?.access_token;
+
+    if (!token) {
+      setCheckingDomainId("");
+      window.location.replace("https://triapriyogi.com/login");
+      return;
+    }
+
+    const result = await fetch("/api/domains/check", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ domainId }),
+    });
+
+    const json = await result.json().catch(() => null);
+
+    setCheckingDomainId("");
+
+    if (!result.ok || !json?.ok) {
+      setNotice(json?.message || "Gagal mengecek DNS domain.");
+      await loadDomainData();
+      return;
+    }
+
+    setNotice(json.message || "DNS berhasil dicek.");
+    await loadDomainData();
+  }
+
+
   if (loading) {
     return (
       <section className="dash-content">
@@ -378,6 +417,24 @@ export default function DomainSettings() {
                       <code>Name: {item.dns_record_name}</code>
                       <code>Value: {item.dns_record_value}</code>
                     </div>
+                  </div>
+                )}
+
+                {item.domain_type === "custom_domain" && (
+                  <div className="domain-actions">
+                    <button
+                      className="domain-secondary-button"
+                      onClick={() => checkDomainDns(item.id)}
+                      disabled={checkingDomainId === item.id}
+                    >
+                      {checkingDomainId === item.id ? "Mengecek DNS..." : "Cek DNS"}
+                    </button>
+
+                    {item.last_checked_at && (
+                      <span>
+                        Terakhir dicek: {new Date(item.last_checked_at).toLocaleString("id-ID")}
+                      </span>
+                    )}
                   </div>
                 )}
 
