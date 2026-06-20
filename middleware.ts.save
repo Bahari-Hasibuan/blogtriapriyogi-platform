@@ -1,0 +1,23 @@
+import { NextRequest, NextResponse } 
+from "next/server"; export function 
+middleware(req: NextRequest) {
+  const host = 
+  req.headers.get("host"); if (!host) 
+  return NextResponse.next(); 
+  console.log("DOMAIN:", host);
+  // domain utama (biar tidak error)
+  if 
+  (host.includes("triapriyogi.com")) 
+  {
+    return NextResponse.next();
+  }
+  // ambil subdomain
+  const subdomain = 
+  host.split(".")[0]; const url = 
+  req.nextUrl.clone(); url.pathname = 
+  `/site/${subdomain}${url.pathname}`; 
+  return NextResponse.rewrite(url);
+}
+export const config = { matcher: 
+  ["/((?!_next|api|favicon.ico).*)"],
+};
