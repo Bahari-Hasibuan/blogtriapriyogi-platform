@@ -4,5 +4,5 @@ export default function Home() {
       <h1>BlogTriapriyogi Platform</h1>
       <p>System aktif</p>
     </div>
-  );
+  )
 }
