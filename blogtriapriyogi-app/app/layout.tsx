@@ -1,16 +1,19 @@
-import "./globals.css";
+import './globals.css'
+import type { ReactNode } from 'react'
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const metadata = {
+  title: 'BlogTriapriyogi Platform',
+  description: 'SaaS Platform',
+}
+
+type Props = {
+  children: ReactNode
+}
+
+export default function RootLayout({ children }: Props) {
   return (
-    <html lang="id">
-      <head>
-        <link rel="icon" href="/assets/favicon/default/favicon.png" />
-      </head>
+    <html lang='id'>
       <body>{children}</body>
     </html>
-  );
+  )
 }
