@@ -1,9 +1,11 @@
+import './globals.css'
+
 export default function Home() {
   return (
-    <div style={{ padding: 40 }}>
+    <main style={{ padding: 60, fontFamily: 'Arial' }}>
       <h1>BlogTriapriyogi Platform</h1>
-      <p>Sistem aktif</p>
-      <p>SaaS mode ready</p>
-    </div>
+      <p>SaaS System Active</p>
+      <p>Landing page restored</p>
+    </main>
   )
 }
