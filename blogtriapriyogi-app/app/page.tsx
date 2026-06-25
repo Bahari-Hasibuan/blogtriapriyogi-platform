@@ -1,11 +1,15 @@
-import './globals.css'
+import Hero from '@/components/landing/Hero'
+import Features from '@/components/landing/Features'
+import Pricing from '@/components/landing/Pricing'
+import Footer from '@/components/landing/Footer'
 
 export default function Home() {
   return (
-    <main style={{ padding: 60, fontFamily: 'Arial' }}>
-      <h1>BlogTriapriyogi Platform</h1>
-      <p>SaaS System Active</p>
-      <p>Landing page restored</p>
+    <main>
+      <Hero />
+      <Features />
+      <Pricing />
+      <Footer />
     </main>
   )
 }
