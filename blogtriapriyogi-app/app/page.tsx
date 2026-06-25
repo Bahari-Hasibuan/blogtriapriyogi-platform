@@ -1,8 +1,9 @@
 export default function Home() {
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 40 }}>
       <h1>BlogTriapriyogi Platform</h1>
-      <p>System aktif</p>
+      <p>Sistem aktif</p>
+      <p>SaaS mode ready</p>
     </div>
   )
 }
