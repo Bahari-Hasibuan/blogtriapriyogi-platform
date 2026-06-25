@@ -1,14 +1,12 @@
-import { headers } from "next/headers";
-import { resolveFavicon } from "@/lib/favicon/resolve";
+import { headers } from 'next/headers';
 
-export default function Head() {
-  const host = headers().get("host");
-  
-  const favicon = resolveFavicon(host, null);
+export default async function Head() {
+  const h = await headers();
+  const host = h.get('host');
 
   return (
     <>
-      <link rel="icon" href={favicon} />
+      <title>Blog SaaS</title>
     </>
   );
 }
