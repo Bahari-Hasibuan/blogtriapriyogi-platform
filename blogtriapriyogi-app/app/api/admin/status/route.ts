@@ -6,7 +6,7 @@ export async function GET() {
   return NextResponse.json({
     ok: true,
     system: "TriApriyogi Studio OS",
-    version: "admin-v1",
+    status: "admin route active",
     modules: [
       "editor",
       "ai-tools",
@@ -16,7 +16,7 @@ export async function GET() {
       "media",
       "templates",
       "payments",
-      "users"
+      "admin"
     ]
   })
 }
