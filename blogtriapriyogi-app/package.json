@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:platform": "node scripts/apply-platform-sql.mjs",
+    "db:health": "node scripts/db-health.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",
