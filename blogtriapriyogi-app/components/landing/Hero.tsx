@@ -1,129 +1,41 @@
+"use client"
+
+import { motion } from "framer-motion"
+import PageTransition from "../motion/page-transition"
+
 export default function Hero() {
   return (
-    <section className="hero">
-      <div className="domainSearch">
-        <div className="domainInput">
-          <span>⌕</span>
-          <input placeholder="Cari domain atau subdomain blog Anda..." />
-        </div>
-        <button>Cari Domain</button>
-        <p>Domain kustom untuk pengguna premium</p>
-      </div>
-
-      <div className="heroInner">
-        <div className="heroText">
-          <div className="badge">⚡ Edisi 2026 · Didukung AI</div>
-
-          <h1>
-            Blog profesional,
-            <span> tanpa rumit.</span>
+    <PageTransition>
+      <div className="min-h-screen flex items-center justify-center px-6">
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-4xl space-y-6"
+        >
+          
+          <h1 className="text-6xl font-semibold tracking-tight">
+            Build SaaS Blog seperti Notion
           </h1>
 
-          <p>
-            Bangun blog modern dengan dashboard pengguna, editor artikel,
-            analytics real-time, AI Assistant, subdomain otomatis, dan domain
-            kustom dalam satu platform.
+          <p className="text-gray-500 text-lg">
+            Editor, AI, analytics, dan publishing system dalam satu platform modern.
           </p>
 
-          <div className="heroActions">
-            <a className="solidButton" href="#pricing">Mulai Gratis</a>
-            <a className="whiteButton" href="#features">Lihat Fitur</a>
+          <div className="flex gap-4 justify-center pt-4">
+            <button className="px-6 py-3 rounded-xl bg-black text-white hover:scale-105 transition">
+              Mulai Gratis
+            </button>
+
+            <button className="px-6 py-3 rounded-xl border hover:bg-gray-50 transition">
+              Lihat Demo
+            </button>
           </div>
 
-          <div className="trustLine">
-            <span>Gratis selamanya</span>
-            <span>Tanpa kartu kredit</span>
-            <span>Upgrade kapan saja</span>
-          </div>
-        </div>
+        </motion.div>
 
-        <div className="heroVisual">
-          <div className="browserMockup">
-            <div className="browserTop">
-              <span></span>
-              <span></span>
-              <span></span>
-              <p>triapriyogi.com/dashboard</p>
-            </div>
-
-            <div className="dashboardMockup">
-              <aside>
-                <div className="sideLogo"></div>
-                <b>TriBlog</b>
-                <a>Dashboard</a>
-                <a>Postingan</a>
-                <a>Media</a>
-                <a>Analytics</a>
-                <a>AI Tools</a>
-              </aside>
-
-              <section>
-                <div className="dashHeader">
-                  <div>
-                    <h3>Selamat datang kembali</h3>
-                    <p>Ringkasan blog dan aktivitas terbaru Anda.</p>
-                  </div>
-                  <button>+ Post baru</button>
-                </div>
-
-                <div className="statsGrid">
-                  <div>
-                    <small>Total post</small>
-                    <strong>24</strong>
-                  </div>
-                  <div>
-                    <small>Kunjungan</small>
-                    <strong>12.8K</strong>
-                  </div>
-                  <div>
-                    <small>Dipublikasi</small>
-                    <strong>18</strong>
-                  </div>
-                  <div>
-                    <small>Draft</small>
-                    <strong>6</strong>
-                  </div>
-                </div>
-
-                <div className="postPanel">
-                  <div className="postPanelTop">
-                    <b>Post terbaru</b>
-                    <small>Lihat semua →</small>
-                  </div>
-
-                  <div className="postItem">
-                    <span></span>
-                    <p>Strategi konten blog 2026</p>
-                    <em>published</em>
-                  </div>
-
-                  <div className="postItem">
-                    <span></span>
-                    <p>Panduan SEO untuk pemula</p>
-                    <em>draft</em>
-                  </div>
-
-                  <div className="postItem">
-                    <span></span>
-                    <p>Membangun personal brand</p>
-                    <em>published</em>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-
-          <div className="floatingCard aiFloat">
-            <b>AI Assistant</b>
-            <p>Generate artikel, rewrite, SEO, image idea.</p>
-          </div>
-
-          <div className="floatingCard domainFloat">
-            <b>andibahari.com</b>
-            <p>Domain aktif</p>
-          </div>
-        </div>
       </div>
-    </section>
-  );
+    </PageTransition>
+  )
 }

@@ -43,3 +43,8 @@ next-env.d.ts
 safe-backups/
 
 /lib/generated/prisma
+
+# environment files
+.env
+.env.*
+!.env.example
