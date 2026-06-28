@@ -3,18 +3,28 @@ import { query } from '@/lib/db'
 
 export async function GET() {
   try {
-    const rows = await query('select now() as waktu_server')
+    const rows = await query(`
+      select
+        id,
+        title,
+        slug,
+        excerpt,
+        status,
+        published_at,
+        created_at
+      from posts
+      order by created_at desc
+      limit 20
+    `)
 
     return NextResponse.json({
       ok: true,
-      database: 'connected',
-      data: rows[0],
+      data: rows,
     })
   } catch (error: any) {
     return NextResponse.json(
       {
         ok: false,
-        database: 'failed',
         error: error.message,
       },
       { status: 500 }

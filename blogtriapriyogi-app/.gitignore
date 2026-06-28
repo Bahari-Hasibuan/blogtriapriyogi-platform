@@ -48,3 +48,7 @@ safe-backups/
 .env
 .env.*
 !.env.example
+
+.env
+.env.*
+!.env.example

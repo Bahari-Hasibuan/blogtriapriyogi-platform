@@ -1,20 +1,23 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getTenantFromHost } from "./lib/tenant";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export function middleware(req: NextRequest) {
-  const host = req.headers.get("host");
-  const tenant = getTenantFromHost(host);
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
 
-  const url = req.nextUrl;
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon') ||
+    pathname.startsWith('/robots.txt') ||
+    pathname.startsWith('/sitemap.xml') ||
+    /\.[a-zA-Z0-9]+$/.test(pathname)
+  ) {
+    return NextResponse.next()
+  }
 
-  // inject tenant ke header
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-tenant", tenant);
+  return NextResponse.next()
+}
 
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }
