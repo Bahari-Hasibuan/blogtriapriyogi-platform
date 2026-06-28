@@ -1,14 +1,32 @@
 import { NextResponse } from 'next/server'
-import { query } from '@/lib/db'
+import { Pool } from 'pg'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const rows = await query('select now() as waktu_server')
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL belum tersedia')
+    }
+
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+      max: 1,
+      connectionTimeoutMillis: 15000,
+    })
+
+    const result = await pool.query('select now() as waktu_server')
+
+    await pool.end()
 
     return NextResponse.json({
       ok: true,
       database: 'connected',
-      data: rows[0],
+      data: result.rows[0],
     })
   } catch (error: any) {
     return NextResponse.json(
