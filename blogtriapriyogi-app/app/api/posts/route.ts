@@ -3,22 +3,32 @@ import { Pool } from 'pg'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET() {
-  try {
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL belum tersedia')
-    }
+  const databaseUrl = process.env.DATABASE_URL
 
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false,
+  if (!databaseUrl) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: 'DATABASE_URL belum tersedia',
+        count: 0,
+        data: [],
       },
-      max: 1,
-      connectionTimeoutMillis: 15000,
-    })
+      { status: 500 }
+    )
+  }
 
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeoutMillis: 15000,
+  })
+
+  try {
     const result = await pool.query(`
       select
         id,
@@ -30,13 +40,13 @@ export async function GET() {
         created_at
       from posts
       order by created_at desc
-      limit 20
+      limit 50
     `)
-
-    await pool.end()
 
     return NextResponse.json({
       ok: true,
+      database: 'connected',
+      table: 'posts',
       count: result.rowCount,
       data: result.rows,
     })
@@ -44,9 +54,13 @@ export async function GET() {
     return NextResponse.json(
       {
         ok: false,
-        error: error.message,
+        error: error?.message || String(error),
+        count: 0,
+        data: [],
       },
       { status: 500 }
     )
+  } finally {
+    await pool.end().catch(() => null)
   }
 }
