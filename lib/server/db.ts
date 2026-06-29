@@ -1,9 +1,5 @@
 import { Pool } from "pg"
 
-declare global {
-  var __triPgPool: Pool | undefined
-}
-
 const connectionString =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
@@ -12,20 +8,26 @@ const connectionString =
   process.env.SUPABASE_DB_URL
 
 if (!connectionString) {
-  throw new Error("DATABASE_URL belum terbaca dari .env.local")
+  throw new Error("DATABASE_URL belum terbaca")
+}
+
+const globalForDb = globalThis as unknown as {
+  dbPool?: Pool
 }
 
 export const pool =
-  globalThis.__triPgPool ||
+  globalForDb.dbPool ||
   new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false },
+    ssl: connectionString.includes("localhost")
+      ? false
+      : { rejectUnauthorized: false },
   })
 
 if (process.env.NODE_ENV !== "production") {
-  globalThis.__triPgPool = pool
+  globalForDb.dbPool = pool
 }
 
-export async function query<T = any>(text: string, params: any[] = []) {
+export async function query<T = any>(text: string, params?: any[]) {
   return pool.query<T>(text, params)
 }
