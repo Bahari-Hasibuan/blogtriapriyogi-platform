@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Pool } from "pg"
 import { createClient } from "@supabase/supabase-js"
+import sharp from "sharp"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -46,10 +47,11 @@ function getSupabaseAdmin() {
 function cleanFileName(name: string) {
   return name
     .toLowerCase()
+    .replace(/\.[^/.]+$/, "")
     .replace(/[^a-z0-9._-]+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 140)
+    .slice(0, 120)
 }
 
 function getKind(mime: string) {
@@ -58,6 +60,10 @@ function getKind(mime: string) {
   if (mime.startsWith("audio/")) return "audio"
   if (mime.includes("pdf")) return "document"
   return "file"
+}
+
+function canConvertToWebp(mime: string) {
+  return ["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(mime)
 }
 
 async function getDefaultTenantId(pool: Pool) {
@@ -199,14 +205,40 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseAdmin()
 
     const originalName = file.name || "upload"
-    const filename = `${Date.now()}-${cleanFileName(originalName)}`
-    const path = `${tenantId}/${folder}/${filename}`
+    const originalMime = file.type || "application/octet-stream"
+    const originalBuffer = Buffer.from(await file.arrayBuffer())
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const mimeType = file.type || "application/octet-stream"
+    let finalBuffer = originalBuffer
+    let finalMime = originalMime
+    let finalFilename = `${Date.now()}-${cleanFileName(originalName)}`
 
-    const upload = await supabase.storage.from(bucket).upload(path, buffer, {
-      contentType: mimeType,
+    if (canConvertToWebp(originalMime)) {
+      finalBuffer = await sharp(originalBuffer)
+        .rotate()
+        .resize({
+          width: 2400,
+          withoutEnlargement: true,
+        })
+        .webp({
+          quality: 82,
+          effort: 4,
+        })
+        .toBuffer()
+
+      finalMime = "image/webp"
+      finalFilename = `${finalFilename}.webp`
+    } else {
+      const ext = originalName.includes(".")
+        ? originalName.split(".").pop()
+        : "file"
+
+      finalFilename = `${finalFilename}.${ext}`
+    }
+
+    const path = `${tenantId}/${folder}/${finalFilename}`
+
+    const upload = await supabase.storage.from(bucket).upload(path, finalBuffer, {
+      contentType: finalMime,
       upsert: false,
     })
 
@@ -241,15 +273,19 @@ export async function POST(req: NextRequest) {
         bucket,
         path,
         publicUrl,
-        filename,
+        finalFilename,
         originalName,
-        mimeType,
-        file.size,
-        getKind(mimeType),
+        finalMime,
+        finalBuffer.length,
+        getKind(finalMime),
         altText,
         caption,
         folder,
-        {},
+        {
+          original_mime_type: originalMime,
+          original_size_bytes: file.size,
+          converted_to_webp: canConvertToWebp(originalMime),
+        },
       ]
     )
 
