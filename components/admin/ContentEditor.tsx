@@ -1,4 +1,5 @@
 "use client"
+import MediaPicker from "./MediaPicker"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -153,10 +154,9 @@ export default function ContentEditor({ id }: Props) {
 
         <label>
           Featured Image URL
-          <input
-            value={form.featured_image_url}
-            onChange={(e) => update("featured_image_url", e.target.value)}
-            style={inputStyle}
+                    <MediaPicker
+            value={form.featured_image_url || ""}
+            onChange={(url) => update("featured_image_url", url)}
           />
         </label>
 
