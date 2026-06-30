@@ -28,3 +28,9 @@ safe-backups
 *.backup.ts
 *.save.ts
 *.old.ts
+
+.next
+.vercel
+.env.local
+.env*.local
+node_modules
