@@ -21,6 +21,7 @@
     "react-dom": "18.3.1",
     "sharp": "^0.35.2",
     "slugify": "latest",
+    "tailwind-merge": "^3.6.0",
     "zod": "latest"
   },
   "devDependencies": {

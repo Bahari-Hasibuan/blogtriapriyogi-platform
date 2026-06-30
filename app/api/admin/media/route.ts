@@ -206,14 +206,15 @@ export async function POST(req: NextRequest) {
 
     const originalName = file.name || "upload"
     const originalMime = file.type || "application/octet-stream"
-    const originalBuffer = Buffer.from(await file.arrayBuffer())
+    const originalArrayBuffer = await file.arrayBuffer()
+    const originalBuffer = Buffer.from(originalArrayBuffer)
 
-    let finalBuffer = originalBuffer
+    let finalBuffer: Uint8Array = new Uint8Array(originalBuffer)
     let finalMime = originalMime
     let finalFilename = `${Date.now()}-${cleanFileName(originalName)}`
 
     if (canConvertToWebp(originalMime)) {
-      finalBuffer = await sharp(originalBuffer)
+      const webpBuffer = await sharp(originalBuffer)
         .rotate()
         .resize({
           width: 2400,
@@ -224,6 +225,7 @@ export async function POST(req: NextRequest) {
           effort: 4,
         })
         .toBuffer()
+      finalBuffer = new Uint8Array(webpBuffer)
 
       finalMime = "image/webp"
       finalFilename = `${finalFilename}.webp`

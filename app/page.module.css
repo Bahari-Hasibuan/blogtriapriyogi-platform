@@ -818,3 +818,96 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Comfort reading upgrade */
+.hero h1 {
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  max-width: 760px;
+}
+
+.hero p {
+  line-height: 1.9;
+  max-width: 620px;
+}
+
+.pricingBanner h2,
+.aiShowcase h2,
+.moduleSection h2,
+.sectionHead h2,
+.faqSection h2 {
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.featureCard h3,
+.planCard h3 {
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+}
+
+.featureCard p,
+.planCard p,
+.faqList p,
+.footer p {
+  line-height: 1.85;
+}
+
+.featureCard {
+  padding: 38px;
+}
+
+.hero {
+  gap: 52px;
+}
+
+@media (max-width: 960px) {
+  .hero {
+    padding: 46px 30px;
+    gap: 34px;
+  }
+
+  .hero h1 {
+    font-size: clamp(42px, 11vw, 64px);
+    line-height: 1.05;
+  }
+
+  .hero p {
+    font-size: 17px;
+    line-height: 1.85;
+  }
+
+  .pricingBanner h2,
+  .aiShowcase h2,
+  .moduleSection h2,
+  .sectionHead h2,
+  .faqSection h2 {
+    line-height: 1.1;
+  }
+}
+
+@media (max-width: 520px) {
+  .shell {
+    width: min(100% - 20px, 760px);
+  }
+
+  .hero {
+    padding: 36px 22px;
+    border-radius: 28px;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+    letter-spacing: -0.035em;
+  }
+
+  .domainBar {
+    padding: 12px;
+  }
+
+  .pricingBanner,
+  .aiShowcase,
+  .moduleSection {
+    border-radius: 26px;
+  }
+}

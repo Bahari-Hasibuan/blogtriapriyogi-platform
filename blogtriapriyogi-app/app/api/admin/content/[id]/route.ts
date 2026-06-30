@@ -1,264 +1,377 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getPool } from "@/lib/server/db"
-import { adminGuard, jsonError } from "@/lib/server/admin-auth"
-import {
-  addWorkflowEvent,
-  buildUpdateData,
-  createRevision,
-  ensureUniqueSlug,
-  getActorId,
-  getTenantId,
-  loadFullPost,
-  normalizeContentType,
-  normalizeStatus,
-  readJson,
-  slugify,
-  syncBlocks,
-  syncSeo,
-  syncTaxonomy,
-} from "@/lib/server/content-service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-async function getId(context: any) {
-  const params = await context.params
-  return params.id
+function jsonOk(data: Record<string, unknown> = {}, status = 200) {
+  return NextResponse.json({ ok: true, ...data }, { status })
+}
+
+function jsonError(message: string, status = 400, details: unknown = null) {
+  return NextResponse.json(
+    {
+      ok: false,
+      error: message,
+      details,
+    },
+    { status }
+  )
+}
+
+async function getRouteId(context: any) {
+  const params = await Promise.resolve(context?.params)
+  return String(params?.id || "").trim()
+}
+
+async function readJson(req: NextRequest) {
+  try {
+    return await req.json()
+  } catch {
+    return {}
+  }
+}
+
+function normalizeContentType(value: unknown) {
+  const type = String(value || "post").toLowerCase().trim()
+  return type === "page" ? "page" : "post"
+}
+
+function normalizeStatus(value: unknown) {
+  const status = String(value || "draft").toLowerCase().trim()
+
+  if (status === "publish") return "published"
+  if (status === "published") return "published"
+  if (status === "draft") return "draft"
+  if (status === "archive") return "archived"
+  if (status === "archived") return "archived"
+  if (status === "restore") return "draft"
+
+  return "draft"
+}
+
+function slugify(value: unknown) {
+  const base = String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+
+  return base || `content-${Date.now()}`
+}
+
+function countWords(value: unknown) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length
+}
+
+function getReadingTime(words: number) {
+  return Math.max(1, Math.ceil(words / 200))
+}
+
+function getActorId(req: NextRequest, body: any) {
+  return (
+    body?.actor_id ||
+    body?.user_id ||
+    req.headers.get("x-user-id") ||
+    req.headers.get("x-admin-id") ||
+    null
+  )
+}
+
+async function getTenantId(client: any, req: NextRequest, body: any) {
+  if (body?.tenant_id) return String(body.tenant_id)
+  if (body?.workspace_id) return String(body.workspace_id)
+
+  const fromHeader =
+    req.headers.get("x-tenant-id") ||
+    req.headers.get("x-tenant") ||
+    req.headers.get("x-workspace")
+
+  if (fromHeader) return fromHeader
+
+  const result = await client.query(
+    `
+    select id
+    from public.tenants
+    order by created_at asc nulls last
+    limit 1
+    `
+  )
+
+  const tenantId = result.rows?.[0]?.id
+
+  if (!tenantId) {
+    throw new Error("Tenant belum ada di database")
+  }
+
+  return tenantId
+}
+
+async function createRevision(client: any, tenantId: string, postId: string) {
+  try {
+    const current = await client.query(
+      `
+      select *
+      from public.posts
+      where id = $1
+        and tenant_id = $2
+      limit 1
+      `,
+      [postId, tenantId]
+    )
+
+    const post = current.rows?.[0]
+
+    if (!post) return
+
+    await client.query(
+      `
+      insert into public.post_revisions
+        (post_id, tenant_id, title, slug, excerpt, content, status, created_at, snapshot)
+      values
+        ($1, $2, $3, $4, $5, $6, $7, now(), $8::jsonb)
+      `,
+      [
+        post.id,
+        tenantId,
+        post.title,
+        post.slug,
+        post.excerpt,
+        post.content,
+        post.status,
+        JSON.stringify(post),
+      ]
+    )
+  } catch {
+    // revision optional
+  }
+}
+
+async function writeAuditLog(
+  client: any,
+  tenantId: string,
+  actorId: string | null,
+  postId: string,
+  action: string,
+  metadata: Record<string, unknown> = {}
+) {
+  try {
+    await client.query(
+      `
+      insert into public.admin_audit_logs
+        (tenant_id, actor_id, entity_type, entity_id, action, metadata)
+      values
+        ($1, $2, $3, $4, $5, $6::jsonb)
+      `,
+      [
+        tenantId,
+        actorId,
+        "content",
+        postId,
+        action,
+        JSON.stringify(metadata),
+      ]
+    )
+  } catch {
+    // audit optional
+  }
 }
 
 export async function GET(req: NextRequest, context: any) {
-  const blocked = adminGuard(req)
-  if (blocked) return blocked
-
   const pool = getPool()
   const client = await pool.connect()
 
   try {
-    const id = await getId(context)
-    const post = await loadFullPost(client, id)
+    const id = await getRouteId(context)
+
+    if (!id) {
+      return jsonError("Content id wajib diisi", 400)
+    }
+
+    const tenantId = await getTenantId(client, req, {})
+
+    const result = await client.query(
+      `
+      select *
+      from public.posts
+      where id = $1
+        and tenant_id = $2
+        and deleted_at is null
+      limit 1
+      `,
+      [id, tenantId]
+    )
+
+    const post = result.rows?.[0]
 
     if (!post) {
       return jsonError("Content not found", 404)
     }
 
-    return NextResponse.json({
-      ok: true,
-      data: post,
-    })
+    return jsonOk({ data: post })
   } catch (err: any) {
-    return jsonError(err.message || "Failed to load content", 500)
+    return jsonError(err?.message || "Failed to load content", 500)
   } finally {
     client.release()
   }
 }
 
 export async function PATCH(req: NextRequest, context: any) {
-  const blocked = adminGuard(req)
-  if (blocked) return blocked
-
   const pool = getPool()
   const client = await pool.connect()
 
   try {
-    const id = await getId(context)
+    const id = await getRouteId(context)
+
+    if (!id) {
+      return jsonError("Content id wajib diisi", 400)
+    }
+
     const body = await readJson(req)
+    const tenantId = await getTenantId(client, req, body)
     const actorId = getActorId(req, body)
-    const tenantId = getTenantId(req, body)
 
-    await client.query("begin")
+    await createRevision(client, tenantId, id)
 
-    const before = await client.query(
+    const title = String(body.title || "Tanpa judul").trim()
+    const content = String(body.content || "")
+    const words = countWords(content)
+    const status = normalizeStatus(body.status)
+    const contentType = normalizeContentType(body.content_type || body.type)
+    const slug = slugify(body.slug || title)
+
+    const result = await client.query(
       `
-      select *
-      from public.posts
-      where id = $1
-      limit 1
+      update public.posts
+      set
+        title = $1,
+        slug = $2,
+        excerpt = $3,
+        content = $4,
+        cover_image_url = $5,
+        featured_image_url = $6,
+        status = $7,
+        content_type = $8,
+        meta_title = $9,
+        meta_description = $10,
+        canonical_url = $11,
+        schema_json = $12::jsonb,
+        seo_keywords = $13,
+        visibility = $14,
+        language = $15,
+        word_count = $16,
+        reading_time = $17,
+        updated_at = now(),
+        published_at = case
+          when $7 = 'published' then coalesce(published_at, now())
+          else published_at
+        end,
+        archived_at = case
+          when $7 = 'archived' then now()
+          when $7 = 'draft' then null
+          when $7 = 'published' then null
+          else archived_at
+        end
+      where id = $18
+        and tenant_id = $19
+        and deleted_at is null
+      returning *
       `,
-      [id]
+      [
+        title,
+        slug,
+        body.excerpt || "",
+        content,
+        body.cover_image_url || body.featured_image_url || null,
+        body.featured_image_url || body.cover_image_url || null,
+        status,
+        contentType,
+        body.meta_title || title,
+        body.meta_description || body.excerpt || "",
+        body.canonical_url || null,
+        JSON.stringify(body.schema_json || {}),
+        body.seo_keywords || null,
+        body.visibility || "public",
+        body.language || "id",
+        words,
+        getReadingTime(words),
+        id,
+        tenantId,
+      ]
     )
 
-    if (!before.rowCount) {
-      await client.query("rollback")
+    const post = result.rows?.[0]
+
+    if (!post) {
       return jsonError("Content not found", 404)
     }
 
-    const current = before.rows[0]
-    const updateData = buildUpdateData(body)
+    await writeAuditLog(client, tenantId, actorId, id, "content:update", {
+      status,
+      content_type: contentType,
+      source: "admin-content-id-route",
+    })
 
-    if (body.content_type || body.type) {
-      updateData.content_type = normalizeContentType(body.content_type || body.type)
-    }
-
-    if (body.slug) {
-      const contentType = updateData.content_type || current.content_type || "post"
-      updateData.slug = await ensureUniqueSlug(
-        client,
-        current.tenant_id || tenantId,
-        contentType,
-        slugify(body.slug),
-        id
-      )
-    }
-
-    if (body.status) {
-      const nextStatus = normalizeStatus(body.status)
-      updateData.status = nextStatus
-
-      if (nextStatus === "published") {
-        updateData.published_at = body.published_at || body.publishedAt || new Date()
-        updateData.first_published_at = current.first_published_at || new Date()
-      }
-
-      if (nextStatus === "archived") {
-        updateData.archived_at = new Date()
-      }
-    }
-
-    if (!Object.keys(updateData).length && !body.seo && !body.categories && !body.tags && !body.blocks) {
-      await client.query("rollback")
-      return jsonError("No update data supplied", 400)
-    }
-
-    let updated = current
-
-    if (Object.keys(updateData).length) {
-      const columns = Object.keys(updateData)
-      const values = Object.values(updateData)
-
-      const setSql = columns.map((col, i) => `${col} = $${i + 1}`).join(", ")
-
-      const result = await client.query(
-        `
-        update public.posts
-        set ${setSql}
-        where id = $${values.length + 1}
-        returning *
-        `,
-        [...values, id]
-      )
-
-      updated = result.rows[0]
-    }
-
-    await syncSeo(client, updated.tenant_id || tenantId, id, body.seo)
-    await syncTaxonomy(client, updated.tenant_id || tenantId, id, body.categories, body.tags)
-    await syncBlocks(client, updated.tenant_id || tenantId, id, body.blocks)
-
-    await createRevision(client, updated.tenant_id || tenantId, updated, actorId, body.change_note || "update content")
-
-    if (before.rows[0].status !== updated.status) {
-      await addWorkflowEvent(
-        client,
-        updated.tenant_id || tenantId,
-        id,
-        actorId,
-        "status_changed",
-        before.rows[0].status,
-        updated.status,
-        body.change_note || null
-      )
-    } else {
-      await addWorkflowEvent(
-        client,
-        updated.tenant_id || tenantId,
-        id,
-        actorId,
-        "updated",
-        before.rows[0].status,
-        updated.status,
-        body.change_note || null
-      )
-    }
-
-    await client.query("commit")
-
-    return NextResponse.json({
-      ok: true,
+    return jsonOk({
       message: "Content updated",
-      data: updated,
+      data: post,
     })
   } catch (err: any) {
-    await client.query("rollback")
-    return jsonError(err.message || "Failed to update content", 500)
+    return jsonError(err?.message || "Failed to update content", 500)
   } finally {
     client.release()
   }
 }
 
 export async function DELETE(req: NextRequest, context: any) {
-  const blocked = adminGuard(req)
-  if (blocked) return blocked
-
   const pool = getPool()
   const client = await pool.connect()
 
   try {
-    const id = await getId(context)
-    const url = new URL(req.url)
-    const hard = url.searchParams.get("hard") === "1"
-    const actorId = getActorId(req)
+    const id = await getRouteId(context)
 
-    await client.query("begin")
-
-    const before = await client.query(
-      `
-      select *
-      from public.posts
-      where id = $1
-      limit 1
-      `,
-      [id]
-    )
-
-    if (!before.rowCount) {
-      await client.query("rollback")
-      return jsonError("Content not found", 404)
+    if (!id) {
+      return jsonError("Content id wajib diisi", 400)
     }
 
-    if (hard) {
-      await client.query(`delete from public.posts where id = $1`, [id])
+    const body = await readJson(req)
+    const tenantId = await getTenantId(client, req, body)
+    const actorId = getActorId(req, body)
 
-      await client.query("commit")
-
-      return NextResponse.json({
-        ok: true,
-        message: "Content permanently deleted",
-      })
-    }
-
-    const deleted = await client.query(
+    const result = await client.query(
       `
       update public.posts
       set
-        status = 'deleted',
-        deleted_at = now()
+        deleted_at = now(),
+        updated_at = now()
       where id = $1
-      returning *
+        and tenant_id = $2
+        and deleted_at is null
+      returning id
       `,
-      [id]
+      [id, tenantId]
     )
 
-    await addWorkflowEvent(
-      client,
-      before.rows[0].tenant_id,
-      id,
-      actorId,
-      "deleted",
-      before.rows[0].status,
-      "deleted",
-      "soft delete"
-    )
+    if (!result.rows?.[0]) {
+      return jsonError("Content not found", 404)
+    }
 
-    await client.query("commit")
+    await writeAuditLog(client, tenantId, actorId, id, "content:delete", {
+      source: "admin-content-id-route",
+    })
 
-    return NextResponse.json({
-      ok: true,
-      message: "Content moved to deleted",
-      data: deleted.rows[0],
+    return jsonOk({
+      message: "Content deleted",
+      id: result.rows[0].id,
     })
   } catch (err: any) {
-    await client.query("rollback")
-    return jsonError(err.message || "Failed to delete content", 500)
+    return jsonError(err?.message || "Failed to delete content", 500)
   } finally {
     client.release()
   }

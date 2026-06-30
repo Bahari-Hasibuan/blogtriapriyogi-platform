@@ -1,64 +1,65 @@
-import { Pool, PoolClient, QueryResult, QueryResultRow } from "pg"
+const { Pool } = require("pg")
 
-const globalForPg = globalThis as unknown as {
-  __blogtriPool?: Pool
+let sharedPool: any = null
+
+function getConnectionString() {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.SUPABASE_DB_URL ||
+    ""
+  )
 }
 
-const databaseUrl =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.SUPABASE_DB_URL
+export function getPool() {
+  if (sharedPool) return sharedPool
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL belum ada. Pastikan .env.local sudah ada.")
-}
+  const connectionString = getConnectionString()
 
-export const pool =
-  globalForPg.__blogtriPool ??
-  new Pool({
-    connectionString: databaseUrl,
-    ssl: databaseUrl.includes("localhost")
-      ? false
-      : { rejectUnauthorized: false },
+  if (!connectionString) {
+    throw new Error("DATABASE_URL belum tersedia di environment")
+  }
+
+  sharedPool = new Pool({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false,
+    },
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 15000,
+    connectionTimeoutMillis: 10000,
   })
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPg.__blogtriPool = pool
+  return sharedPool
 }
 
-export async function query<T extends QueryResultRow = QueryResultRow>(
-  text: string,
-  params?: unknown[]
-): Promise<QueryResult<T>> {
-  return pool.query<T>(text, params)
+export async function query(text: any, params?: any[]) {
+  const pool = getPool()
+  return pool.query(text, params)
 }
 
-export async function dbQuery<T extends QueryResultRow = QueryResultRow>(
-  text: string,
-  params?: unknown[]
-): Promise<QueryResult<T>> {
-  return query<T>(text, params)
+async function runDbQuery(text: any, params?: any[]) {
+  const pool = getPool()
+  return pool.query(text, params)
 }
 
-export async function withTransaction<T>(
-  callback: (client: PoolClient) => Promise<T>
-): Promise<T> {
-  const client = await pool.connect()
+export const dbRead: any = Object.assign(runDbQuery, {
+  query: runDbQuery,
+  pool: getPool,
+})
 
-  try {
-    await client.query("begin")
-    const result = await callback(client)
-    await client.query("commit")
-    return result
-  } catch (error) {
-    await client.query("rollback")
-    throw error
-  } finally {
-    client.release()
-  }
-}
+export const dbWrite: any = Object.assign(runDbQuery, {
+  query: runDbQuery,
+  pool: getPool,
+})
+
+export const db: any = Object.assign(runDbQuery, {
+  query: runDbQuery,
+  read: dbRead,
+  write: dbWrite,
+  pool: getPool,
+})
+
+export default db

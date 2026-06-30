@@ -1,4 +1,4 @@
-import { claimNextJob, failJob, finishJob } from "../../lib/queue"
+import { claimNextJob, failJob, finishJob } from "@/lib/queue"
 
 const workerId = `worker-${process.pid}-${Date.now()}`
 const queueName = process.env.WORKER_QUEUE || "default"

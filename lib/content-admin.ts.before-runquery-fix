@@ -24,24 +24,14 @@ async function runQuery<T = AnyRecord>(
   params?: any[]
 ): Promise<QueryResult<T>> {
   if (typeof dbOrSql === "string") {
-    const result = await (query as any)(
-      dbOrSql,
-      Array.isArray(sqlOrParams) ? sqlOrParams : []
-    )
-
-    return result as QueryResult<T>
+    return await (query as any)(dbOrSql, Array.isArray(sqlOrParams) ? sqlOrParams : [])
   }
 
   if (isClient(dbOrSql)) {
-    const result = await dbOrSql.query(
-      String(sqlOrParams || ""),
-      Array.isArray(params) ? params : []
-    )
-
-    return result as unknown as QueryResult<T>
+    return await dbOrSql.query(String(sqlOrParams || ""), Array.isArray(params) ? params : [])
   }
 
-  return { rows: [] as T[] }
+  return { rows: [] }
 }
 
 export function slugify(input: any): string {

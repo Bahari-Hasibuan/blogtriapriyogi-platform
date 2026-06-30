@@ -31,3 +31,37 @@ if (process.env.NODE_ENV !== "production") {
 export async function query<T = any>(text: string, params?: any[]) {
   return pool.query<T>(text, params)
 }
+
+
+/**
+ * Shared PostgreSQL pool untuk API server.
+ * Dipakai oleh route admin/content, media, analytics, payment, dan modul server lain.
+ */
+let __triSaasPool: any = null
+
+export function getPool(): any {
+  if (__triSaasPool) return __triSaasPool
+
+  const connectionString =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.SUPABASE_DB_URL
+
+  if (!connectionString) {
+    throw new Error("DATABASE_URL belum tersedia di environment")
+  }
+
+  const { Pool } = require("pg")
+
+  __triSaasPool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  })
+
+  return __triSaasPool
+}

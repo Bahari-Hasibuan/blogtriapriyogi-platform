@@ -1,50 +1,65 @@
-import { Pool, QueryResultRow } from "pg"
+const { Pool } = require("pg")
 
-const databaseUrl = process.env.DATABASE_URL
-const readDatabaseUrl = process.env.READ_DATABASE_URL || process.env.DATABASE_URL
+let sharedPool: any = null
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required")
+function getConnectionString() {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.SUPABASE_DB_URL ||
+    ""
+  )
 }
 
-const writePool = new Pool({
-  connectionString: databaseUrl,
-  ssl: { rejectUnauthorized: false },
-  max: Number(process.env.DB_WRITE_POOL_MAX || 5),
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 15000,
-})
+export function getPool() {
+  if (sharedPool) return sharedPool
 
-const readPool = new Pool({
-  connectionString: readDatabaseUrl,
-  ssl: { rejectUnauthorized: false },
-  max: Number(process.env.DB_READ_POOL_MAX || 10),
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 15000,
-})
+  const connectionString = getConnectionString()
 
-export async function dbRead<T extends QueryResultRow = QueryResultRow>(
-  text: string,
-  params: unknown[] = []
-) {
-  return readPool.query<T>(text, params)
-}
-
-export async function dbWrite<T extends QueryResultRow = QueryResultRow>(
-  text: string,
-  params: unknown[] = []
-) {
-  return writePool.query<T>(text, params)
-}
-
-export async function dbHealth() {
-  const write = await dbWrite("select now() as waktu, current_database() as database, 'write' as role")
-  const read = await dbRead("select now() as waktu, current_database() as database, 'read' as role")
-
-  return {
-    ok: true,
-    write: write.rows[0],
-    read: read.rows[0],
-    readReplicaEnabled: Boolean(process.env.READ_DATABASE_URL),
+  if (!connectionString) {
+    throw new Error("DATABASE_URL belum tersedia di environment")
   }
+
+  sharedPool = new Pool({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  })
+
+  return sharedPool
 }
+
+export async function query(text: any, params?: any[]) {
+  const pool = getPool()
+  return pool.query(text, params)
+}
+
+async function runDbQuery(text: any, params?: any[]) {
+  const pool = getPool()
+  return pool.query(text, params)
+}
+
+export const dbRead: any = Object.assign(runDbQuery, {
+  query: runDbQuery,
+  pool: getPool,
+})
+
+export const dbWrite: any = Object.assign(runDbQuery, {
+  query: runDbQuery,
+  pool: getPool,
+})
+
+export const db: any = Object.assign(runDbQuery, {
+  query: runDbQuery,
+  read: dbRead,
+  write: dbWrite,
+  pool: getPool,
+})
+
+export default db

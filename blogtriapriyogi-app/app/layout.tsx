@@ -1,15 +1,18 @@
-import "../app/globals.css"
-import Sidebar from "../components/sidebar/sidebar"
+import "./globals.css"
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const metadata = {
+  title: "TriApriyogi Studio",
+  description: "Platform blog modern dengan dashboard, SEO, domain, media, analytics, dan AI tools.",
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="id">
-      <body className="flex bg-gray-50">
-        <Sidebar />
-        <main className="flex-1 min-h-screen">
-          {children}
-        </main>
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
