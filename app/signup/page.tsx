@@ -1,5 +1,5 @@
-import AuthPage from "@/components/AuthPage"
+import { AuthPage } from "../../components/premium-ui"
 
 export default function SignupPage() {
-  return <AuthPage mode="signup" />
+  return <AuthPage type="signup" />
 }

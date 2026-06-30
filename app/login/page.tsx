@@ -1,5 +1,5 @@
-import AuthPage from "@/components/AuthPage"
+import { AuthPage } from "../../components/premium-ui"
 
 export default function LoginPage() {
-  return <AuthPage mode="login" />
+  return <AuthPage type="login" />
 }
