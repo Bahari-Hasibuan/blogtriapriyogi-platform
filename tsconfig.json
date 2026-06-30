@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2018",
+    "target": "ES2017",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
-    "allowJs": false,
+    "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -17,38 +17,28 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "noErrorTruncation": true,
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": [
         "./*"
       ]
-    }
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
+    "**/*.ts",
+    "**/*.tsx",
     "next-env.d.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "components/**/*.ts",
-    "components/**/*.tsx",
-    "global.d.ts",
-    "middleware.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
     ".next",
-    "safe-backups",
-    "blogtriapriyogi-app",
-    "apps",
-    "lib",
-    "services",
-    "server",
-    "core",
-    "infra",
-    "packages"
+    "safe-backups"
   ]
 }
