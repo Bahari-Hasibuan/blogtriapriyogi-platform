@@ -1,5 +1,5 @@
-import { AuthPage } from "../../components/premium-ui"
+import LoginClient from "../login/LoginClient"
 
 export default function SignupPage() {
-  return <AuthPage type="signup" />
+  return <LoginClient mode="signup" />
 }
