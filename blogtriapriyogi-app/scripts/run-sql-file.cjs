@@ -1,0 +1,76 @@
+const fs = require("fs")
+const { Pool } = require("pg")
+
+function loadEnv(file) {
+  if (!fs.existsSync(file)) return
+
+  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/)
+
+  for (const line of lines) {
+    const clean = line.trim()
+    if (!clean || clean.startsWith("#")) continue
+
+    const index = clean.indexOf("=")
+    if (index === -1) continue
+
+    const key = clean.slice(0, index).trim()
+    let value = clean.slice(index + 1).trim()
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1)
+    }
+
+    if (!process.env[key]) {
+      process.env[key] = value
+    }
+  }
+}
+
+loadEnv(".env.local")
+loadEnv(".env")
+
+const file = process.argv[2]
+
+if (!file) {
+  console.error("Pakai: node scripts/run-sql-file.cjs nama-file.sql")
+  process.exit(1)
+}
+
+if (!fs.existsSync(file)) {
+  console.error("File SQL tidak ditemukan:", file)
+  process.exit(1)
+}
+
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING
+
+if (!databaseUrl) {
+  console.error("DATABASE_URL belum terbaca dari .env.local")
+  process.exit(1)
+}
+
+const pool = new Pool({
+  connectionString: databaseUrl,
+  ssl: { rejectUnauthorized: false }
+})
+
+async function main() {
+  const sql = fs.readFileSync(file, "utf8")
+  await pool.query(sql)
+  console.log("SQL berhasil dijalankan:", file)
+}
+
+main()
+  .catch((err) => {
+    console.error("SQL ERROR:", err.message)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await pool.end()
+  })

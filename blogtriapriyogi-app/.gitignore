@@ -1,0 +1,30 @@
+.vercel
+.env*
+node_modules
+
+# env files
+.env
+.env.*
+!.env.example
+
+# local env
+.env
+.env.*
+!.env.example
+
+# local secret
+.env
+.env.local
+.env.*.local
+
+# build
+.next
+.vercel/output
+
+# backup
+safe-backups
+**/safe-backups/**
+*.bak.ts
+*.backup.ts
+*.save.ts
+*.old.ts

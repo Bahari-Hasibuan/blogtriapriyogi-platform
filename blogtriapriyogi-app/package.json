@@ -1,0 +1,39 @@
+{
+  "name": "blogtriapriyogi-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "latest",
+    "bcryptjs": "latest",
+    "clsx": "latest",
+    "date-fns": "latest",
+    "jsonwebtoken": "latest",
+    "lucide-react": "latest",
+    "next": "14.2.35",
+    "pg": "latest",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "sharp": "^0.35.2",
+    "slugify": "latest",
+    "tailwind-merge": "^3.6.0",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "latest",
+    "@types/jsonwebtoken": "latest",
+    "@types/node": "latest",
+    "@types/pg": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest"
+  }
+}
