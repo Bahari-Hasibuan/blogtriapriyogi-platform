@@ -3,7 +3,7 @@ import { PublicNav, Footer } from "../../components/premium-ui"
 export default function StatusPage() {
   return (
     <>
-      <PublicNav />
+      <div></div>
       <main className="section">
         <div className="container panel">
           <div className="kicker">Status</div>
