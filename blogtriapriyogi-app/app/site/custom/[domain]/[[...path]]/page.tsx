@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import PublicSite31 from "@/components/studio31/PublicSite31";
 import { starterSite, SiteState } from "@/components/studio31/studio31Data";
@@ -13,31 +12,29 @@ function getClient() {
   return createClient(url, key);
 }
 
-async function readSite(slug: string): Promise<SiteState> {
+async function readSite(domain: string): Promise<SiteState> {
   const supabase = getClient();
 
   if (supabase) {
-    const { data } = await supabase.from("studio_sites").select("site").eq("slug", slug).maybeSingle();
+    const { data } = await supabase.from("studio_sites").select("site").eq("custom_domain", domain).maybeSingle();
     if (data?.site) return data.site as SiteState;
   }
 
-  const raw = cookies().get("studio31_site")?.value;
-
-  if (raw) {
-    try {
-      const parsed = JSON.parse(decodeURIComponent(raw)) as SiteState;
-      return { ...parsed, slug };
-    } catch {}
-  }
-
-  return { ...starterSite, slug };
+  return {
+    ...starterSite,
+    slug: domain.replace(/\./g, "-"),
+    domain: {
+      ...starterSite.domain,
+      customDomain: domain,
+    },
+  };
 }
 
 export default async function Page({
   params,
 }: {
-  params: { slug: string; path?: string[] };
+  params: { domain: string; path?: string[] };
 }) {
-  const site = await readSite(params.slug);
+  const site = await readSite(params.domain);
   return <PublicSite31 site={site} path={params.path} />;
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const MAIN_HOST = "triapriyogi.com";
 const STUDIO_HOST = "studio.triapriyogi.com";
+const CONNECT_HOST = "connect.triapriyogi.com";
 const MAIN_HOSTS = ["triapriyogi.com", "www.triapriyogi.com"];
 const RESERVED = ["www", "studio", "connect"];
 
@@ -45,7 +46,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 307);
   }
 
-  if (host.endsWith(".triapriyogi.com") && host !== STUDIO_HOST) {
+  if (host.endsWith(".triapriyogi.com") && host !== STUDIO_HOST && host !== CONNECT_HOST) {
     const sub = host.replace(".triapriyogi.com", "");
 
     if (!RESERVED.includes(sub)) {
@@ -53,6 +54,20 @@ export function middleware(request: NextRequest) {
       url.pathname = `/site/${sub}${pathname}`;
       return NextResponse.rewrite(url);
     }
+  }
+
+  if (
+    host &&
+    !MAIN_HOSTS.includes(host) &&
+    host !== STUDIO_HOST &&
+    host !== CONNECT_HOST &&
+    !host.endsWith(".vercel.app") &&
+    !host.endsWith(".github.dev") &&
+    !host.includes("localhost")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/site/custom/${host}${pathname}`;
+    return NextResponse.rewrite(url);
   }
 
   return NextResponse.next();
