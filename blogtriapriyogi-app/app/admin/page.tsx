@@ -1,8 +1,8 @@
-import Studio26App from "@/components/studio26/Studio26App";
+import Studio27App from "@/components/studio27/Studio27App";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function Page() {
-  return <Studio26App view="admin" />;
+  return <Studio27App view="admin" />;
 }
