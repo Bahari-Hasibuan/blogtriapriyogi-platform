@@ -4,5 +4,5 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function Page() {
-  return <Studio29App view="editor" />;
+  return <Studio29App view="theme" />;
 }
