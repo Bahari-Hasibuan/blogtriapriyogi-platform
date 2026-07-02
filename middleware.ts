@@ -16,11 +16,7 @@ const studioOnlyPaths = [
   "/studio",
 ];
 
-const authPaths = [
-  "/login",
-  "/signup",
-  "/forgot-password",
-];
+const authPaths = ["/login", "/signup", "/forgot-password"];
 
 function isPath(pathname: string, paths: string[]) {
   return paths.some((path) => pathname === path || pathname.startsWith(`${path}/`));

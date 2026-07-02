@@ -1,5 +1,16 @@
-import { AuthPage } from "../../components/premium-ui"
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import MainLogin from "../_main_login";
 
-export default function LoginPage() {
-  return <AuthPage type="login" />
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function HostRouterLogin() {
+  const host = headers().get("host")?.split(":")[0] ?? "";
+
+  if (host === "studio.triapriyogi.com") {
+    redirect("https://triapriyogi.com/login");
+  }
+
+  return <MainLogin />;
 }
