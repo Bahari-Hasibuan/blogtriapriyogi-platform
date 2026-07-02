@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import "./studio.css";
+import styles from "./StudioShell.module.css";
 
 const menus = [
   ["dashboard", "Command Center", "/dashboard"],
@@ -25,22 +25,22 @@ export function StudioShell({
   children: ReactNode;
 }) {
   return (
-    <main className="studio-page">
-      <aside className="studio-sidebar">
-        <div className="studio-brand">
-          <div className="studio-logo">TA</div>
+    <main className={styles.page}>
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <div className={styles.logo}>TA</div>
           <div>
             <strong>Tri Apri Yogi</strong>
             <span>Creator Studio v24</span>
           </div>
         </div>
 
-        <nav className="studio-menu">
+        <nav className={styles.menu}>
           {menus.map(([key, label, href]) => (
             <Link
               key={key}
               href={href}
-              className={active === key ? "studio-link active" : "studio-link"}
+              className={`${styles.link} ${active === key ? styles.active : ""}`}
             >
               <span>{label}</span>
               <b>›</b>
@@ -48,20 +48,21 @@ export function StudioShell({
           ))}
         </nav>
 
-        <div className="studio-version">
+        <div className={styles.version}>
           CORE LOCK v2<br />
-          Upgrade 24 Active
+          Upgrade 24 Active<br />
+          Studio route ready
         </div>
       </aside>
 
-      <section className="studio-main">
-        <div className="studio-hero">
+      <section className={styles.main}>
+        <div className={styles.hero}>
           <div>
-            <p className="studio-eyebrow">STUDIO DASHBOARD</p>
+            <p className={styles.eyebrow}>STUDIO DASHBOARD</p>
             <h1>{title}</h1>
             <p>{description}</p>
           </div>
-          <Link href="/editor" className="studio-cta">
+          <Link href="/editor" className={styles.cta}>
             Buat Konten
           </Link>
         </div>
@@ -74,11 +75,27 @@ export function StudioShell({
 
 export function Stats() {
   return (
-    <section className="studio-stats">
-      <div><span>Total Konten</span><strong>128</strong><p>Artikel, halaman, dan draft.</p></div>
-      <div><span>Halaman</span><strong>42</strong><p>Landing, profil, dan policy.</p></div>
-      <div><span>Visitor</span><strong>8.4K</strong><p>Performa bulan ini.</p></div>
-      <div><span>SEO Score</span><strong>94</strong><p>Kualitas optimasi konten.</p></div>
+    <section className={styles.stats}>
+      <div className={styles.stat}>
+        <span>Total Konten</span>
+        <strong>128</strong>
+        <p>Artikel, halaman, draft, dan arsip.</p>
+      </div>
+      <div className={styles.stat}>
+        <span>Halaman</span>
+        <strong>42</strong>
+        <p>Landing, profil, pricing, dan policy.</p>
+      </div>
+      <div className={styles.stat}>
+        <span>Visitor</span>
+        <strong>8.4K</strong>
+        <p>Performa publik bulan ini.</p>
+      </div>
+      <div className={styles.stat}>
+        <span>SEO Score</span>
+        <strong>94</strong>
+        <p>Kualitas optimasi konten.</p>
+      </div>
     </section>
   );
 }
@@ -91,7 +108,7 @@ export function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="studio-panel">
+    <section className={styles.panel}>
       <h2>{title}</h2>
       {children}
     </section>
@@ -104,9 +121,9 @@ export function Cards({
   items: Array<{ title: string; text: string }>;
 }) {
   return (
-    <div className="studio-cards">
+    <div className={styles.cards}>
       {items.map((item) => (
-        <article key={item.title} className="studio-card">
+        <article key={item.title} className={styles.card}>
           <h3>{item.title}</h3>
           <p>{item.text}</p>
         </article>
@@ -117,18 +134,63 @@ export function Cards({
 
 export function ContentTable() {
   return (
-    <div className="studio-table">
+    <div className={styles.table}>
       {[
         ["Cara Membuat Blog Premium", "Published", "SEO 94"],
         ["Panduan Domain Custom", "Draft", "SEO 81"],
         ["Strategi Konten Modern", "Review", "SEO 90"],
       ].map(([title, status, score]) => (
-        <div key={title} className="studio-row">
+        <div key={title} className={styles.row}>
           <span>{title}</span>
           <b>{status}</b>
           <em>{score}</em>
         </div>
       ))}
     </div>
+  );
+}
+
+export function StudioForm() {
+  return (
+    <div className={styles.form}>
+      <input placeholder="Nama situs" />
+      <input placeholder="Domain utama" />
+      <input placeholder="Subdomain studio" />
+      <select>
+        <option>Studio Purple Cloud</option>
+        <option>Studio Dark Pro</option>
+        <option>Studio Clean White</option>
+      </select>
+      <button>Simpan Konfigurasi</button>
+    </div>
+  );
+}
+
+export function EditorForm() {
+  return (
+    <div className={styles.form}>
+      <input placeholder="Judul artikel" />
+      <input placeholder="Slug artikel" />
+      <input placeholder="Meta description" />
+      <textarea placeholder="Tulis konten artikel di sini" />
+      <button>Simpan Draft</button>
+    </div>
+  );
+}
+
+export function LoginView() {
+  return (
+    <main className={styles.loginPage}>
+      <section className={styles.loginCard}>
+        <div className={styles.logo}>TA</div>
+        <h1>Masuk ke Creator Studio v24.</h1>
+        <p>Login untuk mengelola konten, halaman, SEO, analytics, dan pengaturan sistem.</p>
+        <div className={styles.form}>
+          <input placeholder="Email admin" />
+          <input placeholder="Password" type="password" />
+          <button>Masuk ke Studio</button>
+        </div>
+      </section>
+    </main>
   );
 }

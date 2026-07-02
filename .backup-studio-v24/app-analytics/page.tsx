@@ -9,13 +9,11 @@ export default function Page() {
     >
       <Stats />
       <Panel title="Insight">
-        <Cards
-          items={[
-            { title: "Top Content", text: "Artikel panduan memberi trafik tertinggi." },
-            { title: "SEO Gap", text: "Beberapa halaman perlu meta description." },
-            { title: "Growth", text: "Kunjungan naik dari bulan sebelumnya." },
-          ]}
-        />
+        <Cards items={[
+          { title: "Top Content", text: "Artikel panduan memberi trafik tertinggi." },
+          { title: "SEO Gap", text: "Beberapa halaman perlu meta description." },
+          { title: "Growth", text: "Kunjungan naik dari bulan sebelumnya." },
+        ]} />
       </Panel>
     </StudioShell>
   );

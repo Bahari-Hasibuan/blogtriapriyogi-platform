@@ -1,5 +1,5 @@
-import LoginClient from "./LoginClient"
+import { LoginView } from "@/components/studio/StudioShell";
 
-export default function LoginPage() {
-  return <LoginClient mode="login" />
+export default function Page() {
+  return <LoginView />;
 }

@@ -9,13 +9,11 @@ export default function Page() {
     >
       <Stats />
       <Panel title="Admin modules">
-        <Cards
-          items={[
-            { title: "Role Management", text: "Atur owner, admin, editor, dan writer." },
-            { title: "Audit Log", text: "Pantau perubahan konten dan aktivitas login." },
-            { title: "System Health", text: "Cek status domain, API, dan deployment." },
-          ]}
-        />
+        <Cards items={[
+          { title: "Role Management", text: "Atur owner, admin, editor, dan writer." },
+          { title: "Audit Log", text: "Pantau perubahan konten dan aktivitas login." },
+          { title: "System Health", text: "Cek status domain, API, dan deployment." },
+        ]} />
       </Panel>
     </StudioShell>
   );

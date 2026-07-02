@@ -9,13 +9,11 @@ export default function Page() {
     >
       <Stats />
       <Panel title="Brand kit">
-        <Cards
-          items={[
-            { title: "Bio", text: "Deskripsi singkat untuk halaman publik." },
-            { title: "Social Links", text: "Hubungkan Instagram, LinkedIn, GitHub, dan kontak." },
-            { title: "Visual Identity", text: "Atur logo, warna, dan tampilan brand." },
-          ]}
-        />
+        <Cards items={[
+          { title: "Bio", text: "Deskripsi singkat untuk halaman publik." },
+          { title: "Social Links", text: "Hubungkan Instagram, LinkedIn, GitHub, dan kontak." },
+          { title: "Visual Identity", text: "Atur logo, warna, dan tampilan brand." },
+        ]} />
       </Panel>
     </StudioShell>
   );
