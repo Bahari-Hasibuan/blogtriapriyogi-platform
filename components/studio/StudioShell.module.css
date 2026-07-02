@@ -1,0 +1,292 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(124, 58, 237, 0.22), transparent 34%),
+    radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.12), transparent 30%),
+    linear-gradient(135deg, #f8f7ff 0%, #eff7ff 100%);
+  color: #12111f;
+}
+
+.sidebar {
+  width: 270px;
+  min-height: 100vh;
+  background: #070612;
+  color: #fff;
+  padding: 24px 18px;
+  position: sticky;
+  top: 0;
+  box-shadow: 24px 0 60px rgba(10, 8, 24, 0.18);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #6d28d9, #0ea5e9);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.brandName {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.brandSub {
+  font-size: 10px;
+  color: #a6a1bc;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.nav {
+  display: grid;
+  gap: 8px;
+}
+
+.navItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  color: #bdb8d2;
+  text-decoration: none;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.active {
+  color: #fff;
+  background: linear-gradient(135deg, rgba(109, 40, 217, 0.9), rgba(14, 165, 233, 0.55));
+}
+
+.content {
+  flex: 1;
+  padding: 34px min(5vw, 56px);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 22px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  color: #6d28d9;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.title {
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  margin: 0;
+  max-width: 760px;
+}
+
+.desc {
+  color: #69637b;
+  font-size: 16px;
+  line-height: 1.7;
+  max-width: 720px;
+  margin-top: 18px;
+}
+
+.cta {
+  background: linear-gradient(135deg, #6d28d9, #a855f7);
+  color: #fff;
+  border-radius: 999px;
+  padding: 14px 22px;
+  text-decoration: none;
+  font-weight: 900;
+  box-shadow: 0 18px 44px rgba(109, 40, 217, 0.24);
+  height: fit-content;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.card,
+.panel,
+.action,
+.editorBox {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: 0 20px 60px rgba(31, 24, 62, 0.08);
+}
+
+.card {
+  border-radius: 28px;
+  padding: 24px;
+}
+
+.cardLabel {
+  color: #8b879b;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.cardValue {
+  font-size: 34px;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  margin-bottom: 8px;
+}
+
+.cardHelp {
+  color: #69637b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.panel {
+  border-radius: 30px;
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.panelTitle {
+  margin: 0 0 18px;
+  font-size: 26px;
+  letter-spacing: -0.04em;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.th {
+  color: #8b879b;
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 12px 8px;
+  border-bottom: 1px solid #ece9f7;
+}
+
+.td {
+  padding: 15px 8px;
+  border-bottom: 1px solid #f1eff8;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.action {
+  border-radius: 24px;
+  padding: 22px;
+}
+
+.actionTitle {
+  font-size: 18px;
+  font-weight: 950;
+  margin-bottom: 8px;
+}
+
+.actionText {
+  color: #69637b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.editorBox {
+  border-radius: 28px;
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid #e7e1f5;
+  outline: none;
+  font: inherit;
+}
+
+.textarea {
+  min-height: 220px;
+  resize: vertical;
+}
+
+.primaryButton {
+  padding: 16px;
+  border-radius: 999px;
+  border: 0;
+  background: #6d28d9;
+  color: #fff;
+  font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .page {
+    display: block;
+  }
+
+  .sidebar {
+    width: auto;
+    min-height: auto;
+    position: relative;
+    border-radius: 0 0 28px 28px;
+  }
+
+  .nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .content {
+    padding: 24px 16px;
+  }
+
+  .topbar {
+    display: grid;
+  }
+
+  .cta {
+    width: fit-content;
+  }
+}

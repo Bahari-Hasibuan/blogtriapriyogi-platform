@@ -1,22 +1,31 @@
-import { DashboardShell } from "../../components/premium-ui"
+import { ActionGrid, Panel, StatCard, StatGrid, StudioShell } from "@/components/studio/StudioShell";
 
 export default function ProfilePage() {
   return (
-    <DashboardShell
-      active="Profil Utama"
-      eyebrow="Profil utama"
-      title="Identitas brand dan ruang publik."
-      description="Atur nama studio, alamat publik, deskripsi, warna, tampilan, dan informasi profil."
+    <StudioShell
+      active="profile"
+      eyebrow="Profil Utama"
+      title="Profil studio dan pemilik."
+      description="Kelola identitas admin, bio singkat, sosial media, dan tampilan profil publik."
+      ctaLabel="Edit Profil"
+      ctaHref="/profile"
     >
-      <section className="panel">
-        <h2>Profil brand</h2>
-        <div className="form">
-          <input className="input" placeholder="Nama brand" defaultValue="Tri Apri Yogi Studio" />
-          <input className="input" placeholder="Alamat publik" defaultValue="triapriyogi.com" />
-          <textarea className="textarea" style={{ minHeight: 160 }} defaultValue="Studio konten modern untuk artikel, halaman, domain, analytics, dan publikasi profesional." />
-          <a className="btn btn-primary" href="/dashboard">Simpan Profil</a>
-        </div>
-      </section>
-    </DashboardShell>
-  )
+      <StatGrid>
+        <StatCard label="Brand" value="TA" help="Identitas visual utama." />
+        <StatCard label="Role" value="Owner" help="Akses penuh studio." />
+        <StatCard label="Status" value="Active" help="Profil aktif." />
+        <StatCard label="Security" value="Good" help="Konfigurasi dasar aman." />
+      </StatGrid>
+
+      <Panel title="Profil Publik">
+        <ActionGrid
+          items={[
+            { title: "Bio", text: "Tulis deskripsi singkat yang tampil di halaman publik." },
+            { title: "Social Links", text: "Hubungkan Instagram, LinkedIn, GitHub, dan kontak." },
+            { title: "Brand Kit", text: "Atur warna, logo, dan gaya visual platform." },
+          ]}
+        />
+      </Panel>
+    </StudioShell>
+  );
 }

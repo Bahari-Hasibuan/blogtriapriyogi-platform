@@ -1,24 +1,31 @@
-import { DashboardShell, StatGrid, Panel } from "../../components/premium-ui"
+import { ActionGrid, Panel, StatCard, StatGrid, StudioShell } from "@/components/studio/StudioShell";
 
 export default function AnalyticsPage() {
   return (
-    <DashboardShell
-      active="Analytics"
+    <StudioShell
+      active="analytics"
       eyebrow="Analytics"
-      title="Pantau pertumbuhan konten."
-      description="Lihat performa artikel, sumber trafik, engagement, dan halaman yang paling sering dibaca."
+      title="Pantau performa konten."
+      description="Lihat trafik, konten terbaik, sumber pembaca, durasi baca, dan peluang optimasi."
+      ctaLabel="Optimasi SEO"
+      ctaHref="/posts"
     >
-      <StatGrid stats={[
-        { label: "Visitors", value: "8.4K" },
-        { label: "Views", value: "21.7K" },
-        { label: "Avg time", value: "3m" },
-        { label: "CTR", value: "7.8%" },
-      ]} />
-      <Panel title="Top content" rows={[
-        ["Cara Membuat Blog Premium", "Trending", "3.2K views"],
-        ["Panduan SEO Modern", "Growth", "2.4K views"],
-        ["Domain Custom", "Stable", "1.1K views"],
-      ]} />
-    </DashboardShell>
-  )
+      <StatGrid>
+        <StatCard label="Views" value="8.4K" help="Total kunjungan bulan ini." />
+        <StatCard label="CTR" value="6.8%" help="Rasio klik dari pencarian." />
+        <StatCard label="Avg Read" value="3m 12s" help="Durasi baca rata-rata." />
+        <StatCard label="Growth" value="+18%" help="Pertumbuhan dari bulan lalu." />
+      </StatGrid>
+
+      <Panel title="Insight Utama">
+        <ActionGrid
+          items={[
+            { title: "Konten SEO Tinggi", text: "Artikel panduan dan tutorial memberi kontribusi trafik terbesar." },
+            { title: "Draft Prioritas", text: "Ada draft dengan peluang SEO tinggi jika diterbitkan." },
+            { title: "Halaman Lemah", text: "Beberapa halaman perlu meta description dan internal link." },
+          ]}
+        />
+      </Panel>
+    </StudioShell>
+  );
 }

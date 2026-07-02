@@ -1,84 +1,12 @@
 Already up to date
-Done in 798ms using pnpm v11.8.0
+Done in 553ms using pnpm v11.8.0
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
   ▲ Next.js 14.2.35
   - Environments: .env.local
 
    Creating an optimized production build ...
-<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|/workspaces/blogtriapriyogi-platform/node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!/workspaces/blogtriapriyogi-platform/node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!/workspaces/blogtriapriyogi-platform/app/globals.css': No serializer registered for Warning
-<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> Array { 2 items } -> webpack/lib/ModuleWarning -> Warning
- ⚠ Compiled with warnings
-
-./app/globals.css.webpack[javascript/auto]!=!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./app/globals.css
-Warning
-
-(321:3) autoprefixer: end value has mixed support, consider using flex-end instead
-
-Import trace for requested module:
-./app/globals.css.webpack[javascript/auto]!=!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./app/globals.css
-./app/globals.css
-
-./app/globals.css.webpack[javascript/auto]!=!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./app/globals.css
-Warning
-
-(566:3) autoprefixer: start value has mixed support, consider using flex-start instead
-
-Import trace for requested module:
-./app/globals.css.webpack[javascript/auto]!=!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[2]!./node_modules/.pnpm/next@14.2.35_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[12].use[3]!./app/globals.css
-./app/globals.css
-
- ✓ Compiled successfully
-   Skipping linting
-   Checking validity of types ...
-   Collecting page data ...
-   Generating static pages (0/24) ...
-   Generating static pages (6/24) 
-   Generating static pages (12/24) 
-   Generating static pages (18/24) 
- ✓ Generating static pages (24/24)
-   Finalizing page optimization ...
-   Collecting build traces ...
-
-Route (app)                              Size     First Load JS
-┌ ○ /                                    171 B          87.5 kB
-├ ○ /_not-found                          873 B          88.2 kB
-├ ○ /admin                               171 B          87.5 kB
-├ ○ /analytics                           171 B          87.5 kB
-├ ƒ /api/ai                              0 B                0 B
-├ ƒ /api/cms/categories                  0 B                0 B
-├ ƒ /api/cms/pages                       0 B                0 B
-├ ƒ /api/cms/posts                       0 B                0 B
-├ ƒ /api/cms/posts/[id]                  0 B                0 B
-├ ƒ /api/cms/posts/publish               0 B                0 B
-├ ƒ /api/cms/settings                    0 B                0 B
-├ ƒ /api/cms/tags                        0 B                0 B
-├ ƒ /api/media                           0 B                0 B
-├ ƒ /api/posts                           0 B                0 B
-├ ƒ /api/posts/publish                   0 B                0 B
-├ ƒ /auth/callback                       0 B                0 B
-├ ƒ /auth/signout                        0 B                0 B
-├ ○ /blog                                531 B          87.8 kB
-├ ƒ /blog/[slug]                         171 B          87.5 kB
-├ ○ /dashboard                           171 B          87.5 kB
-├ ○ /editor                              584 B          87.9 kB
-├ ○ /forgot-password                     1.09 kB         163 kB
-├ ○ /login                               2.02 kB         164 kB
-├ ○ /page-editor                         171 B          87.5 kB
-├ ○ /posts                               171 B          87.5 kB
-├ ○ /pricing                             171 B          87.5 kB
-├ ○ /privacy                             171 B          87.5 kB
-├ ○ /profile                             170 B          87.5 kB
-├ ○ /security                            171 B          87.5 kB
-├ ○ /settings                            171 B          87.5 kB
-├ ○ /signup                              2.02 kB         164 kB
-└ ○ /status                              171 B          87.5 kB
-+ First Load JS shared by all            87.3 kB
-  ├ chunks/2200cc46-d577c56fe052f1d7.js  53.6 kB
-  ├ chunks/945-731f9dd178df6a00.js       31.7 kB
-  └ other shared chunks (total)          1.95 kB
-
-
-ƒ Middleware                             26.5 kB
-
-○  (Static)   prerendered as static content
-ƒ  (Dynamic)  server-rendered on demand
-
+Next.js build worker exited with code: null and signal: SIGTERM

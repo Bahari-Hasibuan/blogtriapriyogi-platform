@@ -1,26 +1,25 @@
-import { DashboardShell } from "../../components/premium-ui"
+import { ActionGrid, Panel, StudioShell } from "@/components/studio/StudioShell";
 
 export default function SettingsPage() {
   return (
-    <DashboardShell
-      active="Settings"
+    <StudioShell
+      active="settings"
       eyebrow="Settings"
-      title="Pengaturan platform."
-      description="Atur identitas, domain, role, email admin, notifikasi, keamanan, dan koneksi layanan."
+      title="Atur identitas platform."
+      description="Kelola nama situs, domain, SEO default, keamanan, dan konfigurasi CMS."
+      ctaLabel="Cek Dashboard"
+      ctaHref="/dashboard"
     >
-      <section className="panel">
-        <h2>Konfigurasi utama</h2>
-        <div className="form">
-          <input className="input" placeholder="Email owner" />
-          <input className="input" placeholder="Domain utama" />
-          <select className="input" defaultValue="premium">
-            <option value="premium">Tema Premium Light</option>
-            <option value="dark">Tema Premium Dark</option>
-            <option value="clean">Tema Clean Editorial</option>
-          </select>
-          <a className="btn btn-primary" href="/dashboard">Simpan Pengaturan</a>
-        </div>
-      </section>
-    </DashboardShell>
-  )
+      <Panel title="Konfigurasi Utama">
+        <ActionGrid
+          items={[
+            { title: "Site Identity", text: "Nama situs, deskripsi, logo, dan warna utama." },
+            { title: "Domain Routing", text: "Pisahkan domain utama dan subdomain studio." },
+            { title: "SEO Default", text: "Atur fallback title, description, sitemap, dan robots." },
+            { title: "Security", text: "Siapkan role, sesi login, dan proteksi dashboard." },
+          ]}
+        />
+      </Panel>
+    </StudioShell>
+  );
 }

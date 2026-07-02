@@ -22,3 +22,21 @@ Fitur inti:
 
 Catatan:
 Core ini tidak boleh diacak ulang. Upgrade berikutnya harus menambah modul, bukan merusak core.
+
+## Upgrade 24
+
+Status: ADDED
+
+Fokus:
+1. Studio dashboard UI lebih beda dari landing page utama.
+2. Sidebar studio baru.
+3. Dashboard umum.
+4. Dashboard admin.
+5. Editor artikel.
+6. Editor halaman.
+7. Post manager.
+8. Analytics page.
+9. Settings page.
+10. Profile page.
+11. Routing studio.triapriyogi.com ke dashboard.
+12. Domain utama tetap landing page publik.
