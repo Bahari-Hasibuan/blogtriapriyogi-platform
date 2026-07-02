@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const STUDIO_HOST = "studio.triapriyogi.com";
+const MAIN_HOST = "triapriyogi.com";
 const MAIN_HOSTS = ["triapriyogi.com", "www.triapriyogi.com"];
 
-const studioPaths = [
+const studioOnlyPaths = [
   "/dashboard",
   "/admin",
   "/editor",
@@ -12,13 +13,17 @@ const studioPaths = [
   "/analytics",
   "/settings",
   "/profile",
+  "/studio",
+];
+
+const authPaths = [
   "/login",
   "/signup",
   "/forgot-password",
 ];
 
-function isStudioPath(pathname: string) {
-  return studioPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+function isPath(pathname: string, paths: string[]) {
+  return paths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
 export function middleware(request: NextRequest) {
@@ -28,14 +33,21 @@ export function middleware(request: NextRequest) {
   if (host === STUDIO_HOST && pathname === "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.rewrite(url);
+    return NextResponse.redirect(url, 307);
   }
 
-  if (MAIN_HOSTS.includes(host) && isStudioPath(pathname)) {
+  if (host === STUDIO_HOST && isPath(pathname, authPaths)) {
+    const url = request.nextUrl.clone();
+    url.protocol = "https:";
+    url.hostname = MAIN_HOST;
+    return NextResponse.redirect(url, 307);
+  }
+
+  if (MAIN_HOSTS.includes(host) && isPath(pathname, studioOnlyPaths)) {
     const url = request.nextUrl.clone();
     url.protocol = "https:";
     url.hostname = STUDIO_HOST;
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(url, 307);
   }
 
   return NextResponse.next();

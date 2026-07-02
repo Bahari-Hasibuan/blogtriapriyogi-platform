@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+const dashboardUrl = "https://studio.triapriyogi.com/dashboard";
+
 export default function LoginPage() {
   return (
     <main style={{
@@ -20,8 +22,7 @@ export default function LoginPage() {
       }}>
         <div style={{
           borderRadius: "34px",
-          background:
-            "radial-gradient(circle at top right, rgba(168,85,247,.65), transparent 38%), linear-gradient(135deg, #09051f 0%, #2d0f7c 55%, #7c3aed 100%)",
+          background: "radial-gradient(circle at top right, rgba(168,85,247,.65), transparent 38%), linear-gradient(135deg, #09051f 0%, #2d0f7c 55%, #7c3aed 100%)",
           color: "#fff",
           padding: "48px",
           position: "relative",
@@ -63,9 +64,7 @@ export default function LoginPage() {
           </p>
 
           <div style={{
-            position: "absolute",
-            left: "48px",
-            bottom: "48px",
+            marginTop: "42px",
             width: "360px",
             borderRadius: "28px",
             background: "rgba(255,255,255,.13)",
@@ -81,7 +80,7 @@ export default function LoginPage() {
               marginBottom: "20px"
             }}>
               <span>Selamat datang kembali</span>
-              <span>triapriyogi.com/dashboard</span>
+              <span>studio.triapriyogi.com</span>
             </div>
 
             <div style={{
@@ -123,31 +122,16 @@ export default function LoginPage() {
           alignSelf: "center"
         }}>
           <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
+            display: "inline-flex",
+            padding: "9px 14px",
+            borderRadius: "999px",
+            background: "#f3e8ff",
+            color: "#7c3aed",
+            fontSize: "13px",
+            fontWeight: 800,
             marginBottom: "28px"
           }}>
-            <div style={{
-              display: "inline-flex",
-              padding: "9px 14px",
-              borderRadius: "999px",
-              background: "#f3e8ff",
-              color: "#7c3aed",
-              fontSize: "13px",
-              fontWeight: 800
-            }}>
-              Akses dashboard
-            </div>
-            <div style={{
-              fontSize: "11px",
-              color: "#6b7280",
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-              fontWeight: 800
-            }}>
-              Secure<br />Auth
-            </div>
+            Akses dashboard
           </div>
 
           <h2 style={{
@@ -164,11 +148,11 @@ export default function LoginPage() {
             lineHeight: "1.7",
             marginBottom: "26px"
           }}>
-            Masuk dengan Google, LinkedIn, atau email untuk membuka ruang kerja.
+            Masuk dari halaman utama, lalu lanjut ke studio dashboard.
           </p>
 
           <div style={{ display: "grid", gap: "12px" }}>
-            <Link href="/dashboard" style={{
+            <Link href={dashboardUrl} style={{
               display: "block",
               textAlign: "center",
               padding: "15px",
@@ -181,7 +165,7 @@ export default function LoginPage() {
               Lanjutkan dengan Google
             </Link>
 
-            <Link href="/dashboard" style={{
+            <Link href={dashboardUrl} style={{
               display: "block",
               textAlign: "center",
               padding: "15px",
@@ -203,28 +187,21 @@ export default function LoginPage() {
               atau gunakan email
             </div>
 
-            <input
-              placeholder="email@domain.com"
-              style={{
-                padding: "16px",
-                borderRadius: "15px",
-                border: "1px solid #e5e7eb",
-                fontSize: "15px"
-              }}
-            />
+            <input placeholder="email@domain.com" style={{
+              padding: "16px",
+              borderRadius: "15px",
+              border: "1px solid #e5e7eb",
+              fontSize: "15px"
+            }} />
 
-            <input
-              placeholder="Password"
-              type="password"
-              style={{
-                padding: "16px",
-                borderRadius: "15px",
-                border: "1px solid #e5e7eb",
-                fontSize: "15px"
-              }}
-            />
+            <input placeholder="Password" type="password" style={{
+              padding: "16px",
+              borderRadius: "15px",
+              border: "1px solid #e5e7eb",
+              fontSize: "15px"
+            }} />
 
-            <Link href="/dashboard" style={{
+            <Link href={dashboardUrl} style={{
               display: "block",
               textAlign: "center",
               padding: "16px",
@@ -237,32 +214,6 @@ export default function LoginPage() {
             }}>
               Masuk dashboard
             </Link>
-
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "13px",
-              marginTop: "8px"
-            }}>
-              <Link href="/forgot-password" style={{ color: "#7c3aed", textDecoration: "none" }}>
-                Lupa password?
-              </Link>
-              <Link href="/signup" style={{ color: "#7c3aed", textDecoration: "none" }}>
-                Daftar gratis
-              </Link>
-            </div>
-
-            <div style={{
-              marginTop: "14px",
-              padding: "14px",
-              borderRadius: "16px",
-              background: "#f5f3ff",
-              color: "#7c3aed",
-              textAlign: "center",
-              fontSize: "13px"
-            }}>
-              Login sementara langsung masuk dashboard. Auth asli disambung setelah UI stabil.
-            </div>
           </div>
         </div>
       </section>
