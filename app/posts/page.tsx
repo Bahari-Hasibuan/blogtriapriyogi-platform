@@ -1,16 +1,8 @@
-import { ContentTable, Panel, Stats, StudioShell } from "@/components/studio/StudioShell";
+import StudioApp from "@/components/studio25/StudioApp";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function Page() {
-  return (
-    <StudioShell
-      active="posts"
-      title="Content Library."
-      description="Kelola artikel, draft, scheduled post, arsip, kategori, dan tag."
-    >
-      <Stats />
-      <Panel title="Daftar konten">
-        <ContentTable />
-      </Panel>
-    </StudioShell>
-  );
+  return <StudioApp view="posts" />;
 }

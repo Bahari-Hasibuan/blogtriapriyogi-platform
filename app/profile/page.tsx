@@ -1,22 +1,8 @@
-import { Cards, Panel, Stats, StudioShell } from "@/components/studio/StudioShell";
+import StudioApp from "@/components/studio25/StudioApp";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function Page() {
-  return (
-    <StudioShell
-      active="profile"
-      title="Brand Profile."
-      description="Kelola profil pemilik, bio publik, link sosial, dan brand kit."
-    >
-      <Stats />
-      <Panel title="Brand kit">
-        <Cards
-          items={[
-            { title: "Bio", text: "Deskripsi singkat untuk halaman publik." },
-            { title: "Social Links", text: "Hubungkan Instagram, LinkedIn, GitHub, dan kontak." },
-            { title: "Visual Identity", text: "Atur logo, warna, dan tampilan brand." },
-          ]}
-        />
-      </Panel>
-    </StudioShell>
-  );
+  return <StudioApp view="profile" />;
 }

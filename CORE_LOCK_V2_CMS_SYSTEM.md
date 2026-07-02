@@ -40,3 +40,15 @@ Fokus:
 10. Profile page.
 11. Routing studio.triapriyogi.com ke dashboard.
 12. Domain utama tetap landing page publik.
+
+## Upgrade 25
+
+Status: ADDED
+
+Fokus:
+1. Sidebar kiri bisa dibuka dan ditutup.
+2. Dashboard berisi data kerja yang dapat berubah.
+3. Editor bisa menyimpan draft di browser.
+4. Daftar konten bisa publish dan hapus.
+5. Pengaturan, profil, admin, analytics, dan page builder dibuat lebih berguna.
+6. Tidak menampilkan nama layanan pihak ketiga di UI.

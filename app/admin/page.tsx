@@ -1,22 +1,8 @@
-import { Cards, Panel, Stats, StudioShell } from "@/components/studio/StudioShell";
+import StudioApp from "@/components/studio25/StudioApp";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default function Page() {
-  return (
-    <StudioShell
-      active="admin"
-      title="Admin Control Center."
-      description="Kelola user, role, audit log, keamanan, dan status sistem."
-    >
-      <Stats />
-      <Panel title="Admin modules">
-        <Cards
-          items={[
-            { title: "Role Management", text: "Atur owner, admin, editor, dan writer." },
-            { title: "Audit Log", text: "Pantau perubahan konten dan aktivitas login." },
-            { title: "System Health", text: "Cek status domain, API, dan deployment." },
-          ]}
-        />
-      </Panel>
-    </StudioShell>
-  );
+  return <StudioApp view="admin" />;
 }
