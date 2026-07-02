@@ -1,8 +1,8 @@
-import StudioApp from "@/components/studio25/StudioApp";
+import Studio26App from "@/components/studio26/Studio26App";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function Page() {
-  return <StudioApp view="posts" />;
+  return <Studio26App view="posts" />;
 }

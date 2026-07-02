@@ -52,3 +52,16 @@ Fokus:
 4. Daftar konten bisa publish dan hapus.
 5. Pengaturan, profil, admin, analytics, dan page builder dibuat lebih berguna.
 6. Tidak menampilkan nama layanan pihak ketiga di UI.
+
+## Upgrade 26
+
+Status: ADDED
+
+Fokus:
+1. Sidebar kiri default kecil.
+2. Tombol kotak membuka dan menutup sidebar.
+3. Dashboard diganti dari statis menjadi client dashboard.
+4. Editor dapat menyimpan draft.
+5. Konten dapat diterbitkan dan dihapus.
+6. Login email, Google, dan LinkedIn diarahkan melalui Supabase.
+7. Tampilan dibuat lebih lega dan mudah dibaca.

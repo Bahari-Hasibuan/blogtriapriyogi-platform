@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import MainLogin from "../_main_login";
+import LoginClient from "@/components/auth/LoginClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,5 +12,5 @@ export default function Page() {
     redirect("https://triapriyogi.com/login");
   }
 
-  return <MainLogin />;
+  return <LoginClient />;
 }
