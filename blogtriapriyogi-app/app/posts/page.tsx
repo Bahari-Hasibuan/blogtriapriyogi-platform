@@ -1,20 +1,8 @@
-import { DashboardShell, Panel } from "../../components/premium-ui"
+import Studio26App from "@/components/studio26/Studio26App";
 
-export default function PostsPage() {
-  return (
-    <DashboardShell
-      active="Post"
-      eyebrow="Post"
-      title="Kelola postingan, artikel, dan halaman."
-      description="Cari, edit, arsipkan, jadwalkan, dan pantau status konten."
-      action={<a className="btn btn-primary" href="/editor">Tambah Post</a>}
-    >
-      <Panel title="Daftar konten" rows={[
-        ["Panduan Blog Profesional", "Published", "Artikel"],
-        ["Landing Page Modern", "Draft", "Halaman"],
-        ["SEO untuk Kreator", "Scheduled", "Artikel"],
-        ["Panduan Domain", "Archived", "Dokumentasi"],
-      ]} />
-    </DashboardShell>
-  )
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default function Page() {
+  return <Studio26App view="posts" />;
 }

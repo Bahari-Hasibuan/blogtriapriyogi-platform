@@ -1,0 +1,26 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.triapriyogi.com"
+        }
+      ],
+      "destination": "https://studio.triapriyogi.com/dashboard",
+      "permanent": false
+    },
+    {
+      "source": "/login",
+      "has": [
+        {
+          "type": "host",
+          "value": "studio.triapriyogi.com"
+        }
+      ],
+      "destination": "https://triapriyogi.com/login",
+      "permanent": false
+    }
+  ]
+}
