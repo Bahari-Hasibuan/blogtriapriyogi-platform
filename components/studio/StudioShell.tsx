@@ -1,73 +1,69 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import styles from "./StudioShell.module.css";
+import "./studio.css";
 
-const navItems = [
-  { key: "dashboard", label: "Dashboard", href: "/dashboard" },
-  { key: "admin", label: "Admin", href: "/admin" },
-  { key: "profile", label: "Profil", href: "/profile" },
-  { key: "editor", label: "Editor Artikel", href: "/editor" },
-  { key: "page-editor", label: "Editor Halaman", href: "/page-editor" },
-  { key: "posts", label: "Post Manager", href: "/posts" },
-  { key: "analytics", label: "Analytics", href: "/analytics" },
-  { key: "settings", label: "Settings", href: "/settings" },
+const menus = [
+  ["dashboard", "Command Center", "/dashboard"],
+  ["admin", "Admin Control", "/admin"],
+  ["editor", "Article Studio", "/editor"],
+  ["page-editor", "Page Builder", "/page-editor"],
+  ["posts", "Content Library", "/posts"],
+  ["analytics", "Growth Analytics", "/analytics"],
+  ["profile", "Brand Profile", "/profile"],
+  ["settings", "System Settings", "/settings"],
 ];
 
 export function StudioShell({
   active,
-  eyebrow,
   title,
   description,
-  ctaLabel,
-  ctaHref,
   children,
 }: {
   active: string;
-  eyebrow: string;
   title: string;
   description: string;
-  ctaLabel?: string;
-  ctaHref?: string;
   children: ReactNode;
 }) {
   return (
-    <main className={styles.page}>
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}>
-          <div className={styles.avatar}>TA</div>
+    <main className="studio-page">
+      <aside className="studio-sidebar">
+        <div className="studio-brand">
+          <div className="studio-logo">TA</div>
           <div>
-            <div className={styles.brandName}>Tri Apri Yogi</div>
-            <div className={styles.brandSub}>Studio CMS</div>
+            <strong>Tri Apri Yogi</strong>
+            <span>Creator Studio v24</span>
           </div>
         </div>
 
-        <nav className={styles.nav}>
-          {navItems.map((item) => (
+        <nav className="studio-menu">
+          {menus.map(([key, label, href]) => (
             <Link
-              key={item.key}
-              href={item.href}
-              className={`${styles.navItem} ${active === item.key ? styles.active : ""}`}
+              key={key}
+              href={href}
+              className={active === key ? "studio-link active" : "studio-link"}
             >
-              <span>{item.label}</span>
-              <span>›</span>
+              <span>{label}</span>
+              <b>›</b>
             </Link>
           ))}
         </nav>
+
+        <div className="studio-version">
+          CORE LOCK v2<br />
+          Upgrade 24 Active
+        </div>
       </aside>
 
-      <section className={styles.content}>
-        <div className={styles.topbar}>
+      <section className="studio-main">
+        <div className="studio-hero">
           <div>
-            <div className={styles.eyebrow}>{eyebrow}</div>
-            <h1 className={styles.title}>{title}</h1>
-            <p className={styles.desc}>{description}</p>
+            <p className="studio-eyebrow">STUDIO DASHBOARD</p>
+            <h1>{title}</h1>
+            <p>{description}</p>
           </div>
-
-          {ctaLabel && ctaHref ? (
-            <Link href={ctaHref} className={styles.cta}>
-              {ctaLabel}
-            </Link>
-          ) : null}
+          <Link href="/editor" className="studio-cta">
+            Buat Konten
+          </Link>
         </div>
 
         {children}
@@ -76,91 +72,63 @@ export function StudioShell({
   );
 }
 
-export function StatGrid({ children }: { children: ReactNode }) {
-  return <div className={styles.grid}>{children}</div>;
-}
-
-export function StatCard({
-  label,
-  value,
-  help,
-}: {
-  label: string;
-  value: string;
-  help: string;
-}) {
+export function Stats() {
   return (
-    <div className={styles.card}>
-      <div className={styles.cardLabel}>{label}</div>
-      <div className={styles.cardValue}>{value}</div>
-      <div className={styles.cardHelp}>{help}</div>
-    </div>
+    <section className="studio-stats">
+      <div><span>Total Konten</span><strong>128</strong><p>Artikel, halaman, dan draft.</p></div>
+      <div><span>Halaman</span><strong>42</strong><p>Landing, profil, dan policy.</p></div>
+      <div><span>Visitor</span><strong>8.4K</strong><p>Performa bulan ini.</p></div>
+      <div><span>SEO Score</span><strong>94</strong><p>Kualitas optimasi konten.</p></div>
+    </section>
   );
 }
 
-export function Panel({ title, children }: { title: string; children: ReactNode }) {
+export function Panel({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <section className={styles.panel}>
-      <h2 className={styles.panelTitle}>{title}</h2>
+    <section className="studio-panel">
+      <h2>{title}</h2>
       {children}
     </section>
   );
 }
 
-export function ContentTable({
-  rows,
-}: {
-  rows: Array<{ title: string; status: string; metric: string }>;
-}) {
-  return (
-    <table className={styles.table}>
-      <thead>
-        <tr>
-          <th className={styles.th}>Judul</th>
-          <th className={styles.th}>Status</th>
-          <th className={styles.th}>Skor</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={row.title}>
-            <td className={styles.td}>{row.title}</td>
-            <td className={styles.td}>
-              <span className={styles.badge}>{row.status}</span>
-            </td>
-            <td className={styles.td}>{row.metric}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-export function ActionGrid({
+export function Cards({
   items,
 }: {
   items: Array<{ title: string; text: string }>;
 }) {
   return (
-    <div className={styles.actionGrid}>
+    <div className="studio-cards">
       {items.map((item) => (
-        <div key={item.title} className={styles.action}>
-          <div className={styles.actionTitle}>{item.title}</div>
-          <div className={styles.actionText}>{item.text}</div>
-        </div>
+        <article key={item.title} className="studio-card">
+          <h3>{item.title}</h3>
+          <p>{item.text}</p>
+        </article>
       ))}
     </div>
   );
 }
 
-export function EditorBox() {
+export function ContentTable() {
   return (
-    <div className={styles.editorBox}>
-      <input className={styles.input} placeholder="Judul artikel" />
-      <input className={styles.input} placeholder="Slug artikel" />
-      <input className={styles.input} placeholder="Meta description" />
-      <textarea className={styles.textarea} placeholder="Tulis konten artikel di sini" />
-      <button className={styles.primaryButton}>Simpan Draft</button>
+    <div className="studio-table">
+      {[
+        ["Cara Membuat Blog Premium", "Published", "SEO 94"],
+        ["Panduan Domain Custom", "Draft", "SEO 81"],
+        ["Strategi Konten Modern", "Review", "SEO 90"],
+      ].map(([title, status, score]) => (
+        <div key={title} className="studio-row">
+          <span>{title}</span>
+          <b>{status}</b>
+          <em>{score}</em>
+        </div>
+      ))}
     </div>
   );
 }

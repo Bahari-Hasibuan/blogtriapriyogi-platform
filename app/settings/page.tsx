@@ -1,24 +1,31 @@
-import { ActionGrid, Panel, StudioShell } from "@/components/studio/StudioShell";
+import { Cards, Panel, StudioShell } from "@/components/studio/StudioShell";
 
-export default function SettingsPage() {
+export default function Page() {
   return (
     <StudioShell
       active="settings"
-      eyebrow="Settings"
-      title="Atur identitas platform."
-      description="Kelola nama situs, domain, SEO default, keamanan, dan konfigurasi CMS."
-      ctaLabel="Cek Dashboard"
-      ctaHref="/dashboard"
+      title="System Settings v24."
+      description="Halaman ini sudah diganti total. Tidak ada lagi form lama Tema Premium Light."
     >
-      <Panel title="Konfigurasi Utama">
-        <ActionGrid
-          items={[
-            { title: "Site Identity", text: "Nama situs, deskripsi, logo, dan warna utama." },
-            { title: "Domain Routing", text: "Pisahkan domain utama dan subdomain studio." },
-            { title: "SEO Default", text: "Atur fallback title, description, sitemap, dan robots." },
-            { title: "Security", text: "Siapkan role, sesi login, dan proteksi dashboard." },
-          ]}
-        />
+      <Panel title="Konfigurasi platform">
+        <div className="studio-form">
+          <input placeholder="Nama situs" />
+          <input placeholder="Domain utama" />
+          <input placeholder="Subdomain studio" />
+          <select>
+            <option>Studio Purple Cloud</option>
+            <option>Studio Dark Pro</option>
+            <option>Studio Clean White</option>
+          </select>
+          <button>Simpan Konfigurasi</button>
+        </div>
+      </Panel>
+      <Panel title="Modul sistem">
+        <Cards items={[
+          { title: "Domain Routing", text: "triapriyogi.com untuk publik dan studio.triapriyogi.com untuk dashboard." },
+          { title: "SEO Defaults", text: "Atur title, description, sitemap, robots, dan canonical." },
+          { title: "Security", text: "Siapkan role, login, session, dan proteksi admin." },
+        ]} />
       </Panel>
     </StudioShell>
   );

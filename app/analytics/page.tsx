@@ -1,30 +1,19 @@
-import { ActionGrid, Panel, StatCard, StatGrid, StudioShell } from "@/components/studio/StudioShell";
+import { Cards, Panel, Stats, StudioShell } from "@/components/studio/StudioShell";
 
-export default function AnalyticsPage() {
+export default function Page() {
   return (
     <StudioShell
       active="analytics"
-      eyebrow="Analytics"
-      title="Pantau performa konten."
-      description="Lihat trafik, konten terbaik, sumber pembaca, durasi baca, dan peluang optimasi."
-      ctaLabel="Optimasi SEO"
-      ctaHref="/posts"
+      title="Growth Analytics."
+      description="Pantau views, CTR, durasi baca, konten terbaik, dan peluang optimasi."
     >
-      <StatGrid>
-        <StatCard label="Views" value="8.4K" help="Total kunjungan bulan ini." />
-        <StatCard label="CTR" value="6.8%" help="Rasio klik dari pencarian." />
-        <StatCard label="Avg Read" value="3m 12s" help="Durasi baca rata-rata." />
-        <StatCard label="Growth" value="+18%" help="Pertumbuhan dari bulan lalu." />
-      </StatGrid>
-
-      <Panel title="Insight Utama">
-        <ActionGrid
-          items={[
-            { title: "Konten SEO Tinggi", text: "Artikel panduan dan tutorial memberi kontribusi trafik terbesar." },
-            { title: "Draft Prioritas", text: "Ada draft dengan peluang SEO tinggi jika diterbitkan." },
-            { title: "Halaman Lemah", text: "Beberapa halaman perlu meta description dan internal link." },
-          ]}
-        />
+      <Stats />
+      <Panel title="Insight">
+        <Cards items={[
+          { title: "Top Content", text: "Artikel panduan memberi trafik tertinggi." },
+          { title: "SEO Gap", text: "Beberapa halaman perlu meta description." },
+          { title: "Growth", text: "Kunjungan naik dari bulan sebelumnya." },
+        ]} />
       </Panel>
     </StudioShell>
   );

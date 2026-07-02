@@ -1,27 +1,27 @@
-import { ActionGrid, EditorBox, Panel, StudioShell } from "@/components/studio/StudioShell";
+import { Cards, Panel, StudioShell } from "@/components/studio/StudioShell";
 
-export default function EditorPage() {
+export default function Page() {
   return (
     <StudioShell
       active="editor"
-      eyebrow="Editor Artikel"
-      title="Ruang tulis artikel premium."
-      description="Buat artikel, susun struktur, atur SEO, simpan draft, dan siapkan publikasi dari satu halaman."
-      ctaLabel="Lihat Post"
-      ctaHref="/posts"
+      title="Article Studio."
+      description="Ruang tulis artikel dengan composer, SEO, AI helper, dan draft manager."
     >
       <Panel title="Composer">
-        <EditorBox />
+        <div className="studio-form">
+          <input placeholder="Judul artikel" />
+          <input placeholder="Slug artikel" />
+          <input placeholder="Meta description" />
+          <textarea placeholder="Tulis konten artikel di sini" />
+          <button>Simpan Draft</button>
+        </div>
       </Panel>
-
-      <Panel title="Bantuan AI">
-        <ActionGrid
-          items={[
-            { title: "Outline", text: "Buat struktur artikel dari topik utama." },
-            { title: "Rewrite", text: "Perbaiki kalimat agar lebih jelas dan SEO friendly." },
-            { title: "Meta SEO", text: "Buat meta title dan meta description." },
-          ]}
-        />
+      <Panel title="AI tools">
+        <Cards items={[
+          { title: "Outline", text: "Buat struktur artikel dari topik utama." },
+          { title: "Rewrite", text: "Perbaiki kalimat agar lebih jelas." },
+          { title: "SEO Meta", text: "Buat meta title dan description." },
+        ]} />
       </Panel>
     </StudioShell>
   );
