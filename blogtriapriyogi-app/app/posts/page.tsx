@@ -1,8 +1,8 @@
-import Studio27App from "@/components/studio27/Studio27App";
+import Studio28App from "@/components/studio28/Studio28App";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default function Page() {
-  return <Studio27App view="posts" />;
+  return <Studio28App view="posts" />;
 }
